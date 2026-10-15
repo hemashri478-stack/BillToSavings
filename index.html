@@ -1,0 +1,3826 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bill-to-Savings — AI-Powered Electricity Cost Optimization Platform</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <script>
+    if (typeof window.tailwind !== 'undefined') {
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace']
+            },
+            colors: {
+              navy: {
+                800: '#0b192c',
+                900: '#070f1e',
+                950: '#030712'
+              },
+              emerald: {
+                50: '#ecfdf5',
+                100: '#d1fae5',
+                500: '#10b981',
+                600: '#059669',
+                700: '#047857',
+                800: '#065f46'
+              }
+            }
+          }
+        }
+      };
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .app-tab-active {
+      background-color: #059669 !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .step-active {
+      border-bottom: 2px solid #059669;
+      color: #065f46;
+      font-weight: 700;
+      background-color: #ecfdf5;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .app-main-pane { overflow: visible !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-100 text-slate-900 font-sans antialiased overflow-hidden">
+
+  <!-- APP TOP CHROME BAR -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 z-30 shrink-0 no-print select-none">
+    <div class="px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3">
+      <!-- App Brand & Identity -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-black text-base flex items-center justify-center shadow-md">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm sm:text-base tracking-tight text-white">Bill-to-Savings</span>
+            <span id="demoActiveBadge" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400 text-slate-950 uppercase">
+              Demo Active
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-none hidden sm:block">Turn electricity bills into actionable savings</p>
+        </div>
+      </div>
+
+      <!-- App Mode Switcher (Simple Mode vs Advanced Mode) -->
+      <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700" role="group" aria-label="Application Mode Switcher">
+        <button id="btnModeSimple" type="button" class="px-3 py-1 rounded-md text-xs font-bold transition-all bg-emerald-600 text-white shadow-xs">
+          Simple Mode
+        </button>
+        <button id="btnModeAdvanced" type="button" class="px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-300 hover:text-white">
+          Advanced Mode
+        </button>
+      </div>
+
+      <!-- Quick Preset & Modal Actions -->
+      <div class="flex items-center gap-2">
+        <label for="presetSelect" class="sr-only">Business Preset</label>
+        <select id="presetSelect" class="text-xs border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500">
+          <option value="cafe">Sample: Chennai Café (2,400 kWh)</option>
+          <option value="retail">Sample: Retail Shop (1,500 kWh)</option>
+          <option value="workshop">Sample: Workshop (3,800 kWh)</option>
+        </select>
+        <button id="btnViewSampleBill" type="button" class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+          View Sample Bill
+        </button>
+        <button id="btnResetDemoPrompt" type="button" class="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 text-xs font-semibold transition">
+          Reset Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP ACTION STRIP & LIVE KPI TICKER -->
+  <section class="bg-slate-800 text-slate-200 border-b border-slate-700/80 px-3 sm:px-5 py-2 shrink-0 no-print">
+    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-bold text-white tracking-tight">
+          “Your electricity bill tells you what you paid. Bill-to-Savings helps you discover what you could save.”
+        </span>
+        <div class="hidden lg:flex items-center gap-1.5">
+          <button id="heroBtnTryDemo" type="button" class="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition">
+            Try Demo (Instant Report)
+          </button>
+          <button id="heroBtnAnalyzeBill" type="button" class="px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-white font-medium transition">
+            Analyze a Bill
+          </button>
+          <button id="heroBtnManualEntry" type="button" class="px-2.5 py-1 rounded-md bg-transparent hover:bg-slate-700 text-slate-300 border border-slate-600 font-medium transition">
+            Enter Bill Manually
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Reactive KPI Ticker -->
+      <div class="flex items-center gap-3 sm:gap-4 font-mono text-[11px] sm:text-xs">
+        <div>
+          <span class="text-slate-400">Current:</span>
+          <span id="heroSnapBill" class="font-bold text-white ml-1">₹23,400</span>
+          <span id="heroSnapKwh" class="text-slate-400 text-[10px] ml-1">2,400 kWh billed</span>
+        </div>
+        <div class="text-emerald-400">
+          <span class="text-slate-400">Est. Savings:</span>
+          <span id="heroSnapSavings" class="font-extrabold ml-1">₹0</span>
+        </div>
+        <div class="hidden sm:block text-emerald-300">
+          <span id="heroSnapAnnual">₹0/yr annualized est.</span>
+        </div>
+        <span id="heroSnapDataTag" class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px]">Fictional Demo Data</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERSISTENT DEMO TRANSPARENCY BANNER -->
+  <div id="globalNoticeBanner" class="bg-amber-50/90 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-950 shrink-0 no-print">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 text-[10px]">NOTICE</span>
+        <span id="globalNoticeText" class="font-medium text-[11px] sm:text-xs">
+          Fictional demo data — not an official electricity bill. Tariff rates and emissions factors shown are editable demo assumptions, not official TANGEDCO/TNPDCL rates.
+        </span>
+      </div>
+      <span class="text-[11px] text-amber-800 hidden md:inline">Decision-support estimates based on transparent formulas • Never guaranteed reductions</span>
+    </div>
+  </div>
+
+  <!-- APP WORKSPACE TABS -->
+  <nav class="bg-white border-b border-slate-200 px-3 sm:px-5 py-1.5 shrink-0 shadow-xs z-20 no-print" aria-label="App Workspace Navigation">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+        <button type="button" data-step="3" class="workflow-tab app-tab-active px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">3</span>
+          <span>Savings Dashboard &amp; Plan</span>
+        </button>
+        <button type="button" data-step="1" class="workflow-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">1</span>
+          <span>Bill Upload &amp; Review</span>
+        </button>
+        <button type="button" data-step="2" class="workflow-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">2</span>
+          <span>6-Question Profile <span class="adv-only-inline hidden text-emerald-700 font-semibold">(+Equipment &amp; Tariffs)</span></span>
+        </button>
+        <button type="button" data-step="4" class="workflow-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">4</span>
+          <span>What-If Simulator &amp; ToD</span>
+        </button>
+        <button type="button" data-step="5" id="tabBtnMeters" class="workflow-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">5</span>
+          <span>Multiple Meters <span id="meterCountBadge" class="px-1 py-0.2 bg-slate-200 text-slate-800 rounded-full text-[10px] font-bold">2</span></span>
+        </button>
+        <button type="button" data-step="6" class="workflow-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[10px] flex items-center justify-center font-bold">6</span>
+          <span>Audit Report &amp; Export</span>
+        </button>
+      </div>
+
+      <button id="heroBtnJumpDashboard" type="button" class="hidden sm:inline-flex text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition">
+        View Plan →
+      </button>
+    </div>
+  </nav>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 max-w-sm hidden no-print" role="status" aria-live="polite">
+    <div id="toastBox" class="rounded-xl shadow-xl border px-3.5 py-2.5 flex items-start gap-2.5 bg-slate-900 text-white border-slate-700">
+      <span id="toastIcon" class="text-base font-bold">✓</span>
+      <div class="flex-1 text-xs font-medium" id="toastMessage">Action completed.</div>
+      <button id="btnCloseToast" type="button" class="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+    </div>
+  </div>
+
+  <div class="hidden" aria-hidden="true">
+    <span id="heroModeIndicator">Simple Mode</span>
+    <span id="heroSnapTopAction">Top Action</span>
+  </div>
+
+  <!-- MAIN SCROLLABLE APP WORKSPACE -->
+  <main class="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 app-main-pane">
+
+    <div id="validationAlertContainer" class="hidden space-y-2 no-print"></div>
+
+    <!-- VIEW 3: SAVINGS DASHBOARD & ACTION PLAN -->
+    <section id="stepView3" class="step-view space-y-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="dashboardKpiGrid"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-slate-900">Current Scenario vs. Improved Scenario</h2>
+              <p class="text-xs text-slate-500">Distinguishing energy kWh reduction from Time-of-Day tariff optimization</p>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              Estimates Only — Not Guaranteed
+            </span>
+          </div>
+
+          <div id="scenarioComparisonCards" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"></div>
+
+          <div class="relative h-64 w-full pt-1">
+            <canvas id="chartScenarioComparison"></canvas>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3 flex flex-col justify-between">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h2 class="text-sm sm:text-base font-bold text-slate-900">Estimated Consumption &amp; Data Provenance</h2>
+              <span class="text-[11px] text-slate-500 font-mono">kW × Hours × Days</span>
+            </div>
+            <div id="provenanceBadgesBox" class="space-y-1.5 text-xs"></div>
+          </div>
+
+          <div class="relative h-64 w-full">
+            <canvas id="chartCategoryBreakdown"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Ranked “Start Saving” Action Plan</h2>
+            <p class="text-xs text-slate-500">
+              Ranked transparently by expected monthly rupee savings, low upfront implementation cost, payback speed, feasibility, and your main business priority.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btnDashOpenSimulator" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-semibold transition">
+              Open What-If Simulator →
+            </button>
+            <button id="btnDashOpenReport" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+              Export / Print Report
+            </button>
+          </div>
+        </div>
+
+        <div id="recommendationsListContainer" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: BILL UPLOAD, EXTRACTION & REVIEW -->
+    <section id="stepView1" class="step-view hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Step 1: Electricity Bill Upload, Extraction &amp; Review</h2>
+            <p class="text-xs text-slate-500">
+              Upload a bill image (JPG, PNG) or PDF, load a fictional sample bill, or enter your bill figures manually.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btnStep1LoadDemoBill" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition">
+              Load Fictional Demo Bill
+            </button>
+            <button id="btnStep1ClearForManual" type="button" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium transition">
+              Clear for Blank Manual Entry
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-5 space-y-3">
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <div class="flex items-start gap-2.5">
+                <input id="chkAiConsent" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                <label for="chkAiConsent" class="text-xs text-slate-700 leading-relaxed">
+                  <strong class="text-slate-900">Informed Consent for Extraction:</strong> I consent to extracting bill fields from my uploaded file.
+                  <span class="block text-slate-500 text-[11px] mt-0.5">
+                    Privacy Safeguard: Bill data is never uploaded to any external AI service without this consent.
+                  </span>
+                </label>
+              </div>
+
+              <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center bg-white transition cursor-pointer">
+                <input id="fileBillUpload" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="sr-only" />
+                <label for="fileBillUpload" class="cursor-pointer block space-y-1.5">
+                  <div class="mx-auto w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-base">
+                    📄
+                  </div>
+                  <div class="text-xs font-bold text-slate-800">
+                    Click to select a Bill Image (JPG, PNG) or PDF
+                  </div>
+                  <div class="text-[11px] text-slate-500">
+                    Maximum file size: 5 MB • Validated on client &amp; server
+                  </div>
+                </label>
+              </div>
+
+              <div id="uploadStatusBox" class="hidden rounded-lg p-2.5 text-xs border"></div>
+
+              <div class="pt-2 border-t border-slate-200 space-y-1.5">
+                <div class="text-[11px] font-bold text-slate-700">Quick Extraction &amp; Edge-Case Simulators (No API Key Needed):</div>
+                <div class="flex flex-wrap gap-2">
+                  <button id="btnSimPartialOcr" type="button" class="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-medium transition">
+                    Simulate Partial/Uncertain OCR Scan
+                  </button>
+                  <button id="btnSimInvalidFile" type="button" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 text-[11px] font-medium transition">
+                    Test Invalid File Rejection (.exe)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-xs font-bold uppercase text-slate-700">Review &amp; Edit Bill Values</h3>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">● Verified / Entered</span>
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">▲ Uncertain — Review</span>
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-300">○ Not available</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="billFieldsGrid"></div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-500">Missing fields are marked “Not available” — the engine never invents missing bill values.</span>
+              <button id="btnStep1Next" type="button" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+                Next: 6-Question Business Profile →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: SIX-QUESTION PROFILE (+ ADVANCED EQUIPMENT & TARIFFS) -->
+    <section id="stepView2" class="step-view hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Step 2: Six-Question Business Profile</h2>
+            <p class="text-xs text-slate-500">
+              These 6 answers personalize your recommendations and priorities.
+            </p>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+            Synced across Simple &amp; Advanced Mode
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <label for="qBusinessType" class="block text-xs font-bold text-slate-900">1. What type of business do you operate?</label>
+            <select id="qBusinessType" class="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:ring-1 focus:ring-emerald-500">
+              <option value="Retail shop">Retail shop</option>
+              <option value="Restaurant or café">Restaurant or café</option>
+              <option value="Salon">Salon</option>
+              <option value="Small office">Small office</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <label for="qOperatingHours" class="block text-xs font-bold text-slate-900">2. What are your usual operating hours?</label>
+            <select id="qOperatingHours" class="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:ring-1 focus:ring-emerald-500">
+              <option value="Less than 6 hours">Less than 6 hours</option>
+              <option value="6–8 hours">6–8 hours</option>
+              <option value="9–12 hours">9–12 hours</option>
+              <option value="More than 12 hours">More than 12 hours</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 md:col-span-2">
+            <span class="block text-xs font-bold text-slate-900">3. Which equipment do you commonly use? (Select all that apply)</span>
+            <div id="qEquipmentCheckboxes" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1"></div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <label for="qMajorFreq" class="block text-xs font-bold text-slate-900">4. How often do you use air conditioning or other major electrical equipment?</label>
+            <select id="qMajorFreq" class="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:ring-1 focus:ring-emerald-500">
+              <option value="Rarely">Rarely</option>
+              <option value="A few hours per day">A few hours per day</option>
+              <option value="Most operating hours">Most operating hours</option>
+              <option value="Almost continuously">Almost continuously</option>
+              <option value="Not applicable">Not applicable</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <label for="qCanShift" class="block text-xs font-bold text-slate-900">5. Can you shift some electricity usage to another time of day?</label>
+            <select id="qCanShift" class="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:ring-1 focus:ring-emerald-500">
+              <option value="Yes">Yes</option>
+              <option value="Maybe">Maybe</option>
+              <option value="No">No</option>
+              <option value="Not sure">Not sure</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 md:col-span-2">
+            <label for="qMainPriority" class="block text-xs font-bold text-slate-900">6. What is your main priority?</label>
+            <select id="qMainPriority" class="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:ring-1 focus:ring-emerald-500">
+              <option value="Reduce my monthly bill.">Reduce my monthly bill.</option>
+              <option value="Reduce peak-time electricity usage.">Reduce peak-time electricity usage.</option>
+              <option value="Reduce unnecessary energy consumption.">Reduce unnecessary energy consumption.</option>
+              <option value="Find low-cost improvements.">Find low-cost improvements.</option>
+              <option value="Understand my electricity usage.">Understand my electricity usage.</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="simpleModeAdvCallout" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="text-xs text-emerald-950">
+            <strong>Want to enter exact appliance wattages, tariff slabs, or Time-of-Day rates?</strong> Switch to <strong>Advanced Mode</strong> anytime without losing your answers.
+          </div>
+          <button id="btnCalloutSwitchAdv" type="button" class="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition">
+            Open Advanced Inputs
+          </button>
+        </div>
+
+        <div id="advancedInputsContainer" class="hidden space-y-4 pt-3 border-t border-slate-200">
+          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase text-slate-800">Advanced Tariff, Time-of-Day &amp; Emissions Assumptions</h3>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Demo Tariff Assumption — Editable</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div>
+                <label for="advMarginalRate" class="block font-semibold text-slate-700">Applicable Marginal Rate (₹/kWh)</label>
+                <input id="advMarginalRate" type="number" step="0.05" min="0" placeholder="Blank = use effective rate" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advTodSupported" class="block font-semibold text-slate-700">Time-of-Day (ToD) Tariff Active?</label>
+                <select id="advTodSupported" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white">
+                  <option value="true">Yes — Peak / Off-Peak Rates Apply</option>
+                  <option value="false">No — Flat Rate Tariff</option>
+                </select>
+              </div>
+              <div>
+                <label for="advPeakRate" class="block font-semibold text-slate-700">Peak Slot Rate (₹/kWh)</label>
+                <input id="advPeakRate" type="number" step="0.05" min="0" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advOffPeakRate" class="block font-semibold text-slate-700">Off-Peak / Normal Rate (₹/kWh)</label>
+                <input id="advOffPeakRate" type="number" step="0.05" min="0" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advPeakWindow" class="block font-semibold text-slate-700">Peak Hours Window Label</label>
+                <input id="advPeakWindow" type="text" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advOffPeakWindow" class="block font-semibold text-slate-700">Off-Peak Hours Window Label</label>
+                <input id="advOffPeakWindow" type="text" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advOverallCap" class="block font-semibold text-slate-700">Overall Energy-Saving Cap (%)</label>
+                <input id="advOverallCap" type="number" min="5" max="75" step="1" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+              <div>
+                <label for="advCo2Factor" class="block font-semibold text-slate-700">Grid CO₂ Factor (kg CO₂/kWh)</label>
+                <input id="advCo2Factor" type="number" step="0.001" min="0" placeholder="Blank = Not available" class="mt-0.5 w-full rounded border border-slate-300 px-2 py-1 bg-white" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase text-slate-800">Equipment-Level Energy Estimator (kWh = kW × Hours × Days × Duty)</h3>
+              <button id="btnAddEquipmentRow" type="button" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+                + Add Equipment Row
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-200/70 border-b border-slate-300 text-left text-slate-700">
+                    <th class="py-1.5 px-2 font-bold">Equipment Name</th>
+                    <th class="py-1.5 px-2 font-bold">Category</th>
+                    <th class="py-1.5 px-2 font-bold">Power (kW)</th>
+                    <th class="py-1.5 px-2 font-bold">Qty</th>
+                    <th class="py-1.5 px-2 font-bold">Hrs/Day (0–24)</th>
+                    <th class="py-1.5 px-2 font-bold">Days/Mo (0–31)</th>
+                    <th class="py-1.5 px-2 font-bold">Duty (0.1–1.0)</th>
+                    <th class="py-1.5 px-2 font-bold text-right">Est. kWh/mo</th>
+                    <th class="py-1.5 px-2 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="equipmentTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
+              </table>
+            </div>
+            <div id="equipmentSummaryBar" class="text-xs text-slate-600 flex justify-between pt-1"></div>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <button id="btnStep2Prev" type="button" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium hover:bg-slate-50 transition">
+            ← Back to Bill Review
+          </button>
+          <button id="btnStep2Next" type="button" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+            Calculate &amp; View Savings Plan →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: WHAT-IF SIMULATOR & TIME-OF-DAY OPTIMIZER -->
+    <section id="stepView4" class="step-view hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Interactive What-If Simulator &amp; Time-of-Day Optimizer</h2>
+            <p class="text-xs text-slate-500">
+              Test operational changes, budget constraints, and load-shifting scenarios and watch the impact update immediately.
+            </p>
+          </div>
+          <button id="btnResetSimulator" type="button" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 text-xs font-semibold transition">
+            Reset to Original Scenario
+          </button>
+        </div>
+
+        <div id="simulatorImpactStrip" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-slate-900 text-white p-3.5 rounded-xl font-mono"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-6 space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <h3 class="text-xs font-bold uppercase text-slate-800">Scenario Controls</h3>
+
+            <div class="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
+              <div class="flex justify-between text-xs font-bold text-slate-800">
+                <label for="simHoursSlider">What if non-essential operating hours are reduced?</label>
+                <span id="simHoursValueLabel" class="text-emerald-700 font-mono">0%</span>
+              </div>
+              <input id="simHoursSlider" type="range" min="0" max="25" step="1" value="0" class="w-full accent-emerald-600 cursor-pointer" />
+              <p class="text-[11px] text-slate-500">Trims early startup and late closing run-time across non-24/7 loads.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer text-xs">
+                <input id="simChkLed" type="checkbox" checked class="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500" />
+                <span><strong class="block text-slate-900">Install LED Lighting</strong><span class="text-slate-500 text-[11px]">LED retrofit &amp; zoning</span></span>
+              </label>
+              <label class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer text-xs">
+                <input id="simChkCooling" type="checkbox" checked class="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500" />
+                <span><strong class="block text-slate-900">Optimize Cooling / AC</strong><span class="text-slate-500 text-[11px]">24°C setpoint &amp; coil care</span></span>
+              </label>
+            </div>
+
+            <div class="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+              <label for="simBudgetInput" class="block text-xs font-bold text-slate-800">Max Implementation Budget (₹)</label>
+              <input id="simBudgetInput" type="number" min="0" step="500" placeholder="No limit (leave blank)" class="w-full rounded border border-slate-300 px-2 py-1 text-xs" />
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                <button type="button" data-budget="0" class="sim-quick-budget text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">₹0 Only</button>
+                <button type="button" data-budget="2500" class="sim-quick-budget text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">≤ ₹2,500</button>
+                <button type="button" data-budget="5000" class="sim-quick-budget text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">≤ ₹5,000</button>
+                <button type="button" data-budget="" class="sim-quick-budget text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">No Limit</button>
+              </div>
+            </div>
+
+            <label class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer text-xs">
+              <input id="simChkTop3LowCost" type="checkbox" class="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500" />
+              <span><strong class="block text-slate-900">Top 3 Lowest-Cost Actions Only</strong><span class="text-slate-500 text-[11px]">Prioritize cheapest positive-saving actions</span></span>
+            </label>
+          </div>
+
+          <div class="lg:col-span-6 space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase text-slate-800">Time-of-Day (ToD) Load Shifting Analysis</h3>
+              <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-bold">Timing Shift ≠ kWh Reduction</span>
+            </div>
+
+            <div class="p-3 bg-white rounded-lg border border-slate-200 space-y-2">
+              <label class="flex items-center justify-between gap-2 cursor-pointer text-xs font-bold text-slate-900">
+                <span>Enable Flexible Peak-to-Off-Peak Load Shifting</span>
+                <input id="simChkLoadShift" type="checkbox" checked class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500" />
+              </label>
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs text-slate-700">
+                  <label for="simShiftSlider">Share of Peak-Period Usage Shifted to Off-Peak/Normal:</label>
+                  <span id="simShiftValueLabel" class="font-bold text-emerald-700 font-mono">30%</span>
+                </div>
+                <input id="simShiftSlider" type="range" min="0" max="60" step="5" value="30" class="w-full accent-emerald-600 cursor-pointer" />
+              </div>
+            </div>
+
+            <div id="todDetailPanel" class="p-3 bg-white rounded-lg border border-slate-200 space-y-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: MULTIPLE METERS PORTFOLIO MANAGER -->
+    <section id="stepView5" class="step-view hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Multiple Electricity Meters &amp; Portfolio View</h2>
+            <p class="text-xs text-slate-500">
+              Manage separate electricity meters (e.g., Main Shop Floor + Annex Kitchen/Cold Room), view individual meter plans, or inspect combined totals without double-counting.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnAddNewMeter" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+              + Add Another Meter
+            </button>
+            <button id="btnTestDuplicateMeter" type="button" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-medium transition">
+              Test Duplicate Meter Safeguard
+            </button>
+          </div>
+        </div>
+
+        <div id="multiMeterDuplicateAlert" class="hidden p-3 rounded-lg bg-amber-50 border border-amber-300 text-xs text-amber-950 font-medium"></div>
+
+        <div id="multiMeterCombinedCards" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-300 text-left text-slate-700">
+                <th class="py-2 px-2.5 font-bold">Meter Name</th>
+                <th class="py-2 px-2.5 font-bold">Consumer / Account ID</th>
+                <th class="py-2 px-2.5 font-bold">Billing Period</th>
+                <th class="py-2 px-2.5 font-bold text-right">Billed kWh</th>
+                <th class="py-2 px-2.5 font-bold text-right">Total Bill (₹)</th>
+                <th class="py-2 px-2.5 font-bold text-right">Est. Savings (₹/mo)</th>
+                <th class="py-2 px-2.5 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="metersTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: AUDIT REPORT & EXPORT -->
+    <section id="stepView6" class="step-view hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 no-print">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Energy Cost Optimization Audit Report</h2>
+            <p class="text-xs text-slate-500">Complete report with methodology, assumptions, ranked recommendations, and CSV/PDF export.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 text-xs bg-slate-100 px-2.5 py-1.5 rounded border border-slate-200 cursor-pointer">
+              <input id="chkRedactConsumerId" type="checkbox" checked class="h-3.5 w-3.5 rounded text-emerald-600" />
+              <span>Redact Consumer ID in Report &amp; CSV</span>
+            </label>
+            <button id="btnExportCsv" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+              ⬇ Export Safe CSV
+            </button>
+            <button id="btnPrintPdf" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">
+              🖨 Print / Save as PDF
+            </button>
+          </div>
+        </div>
+
+        <div id="auditReportContent" class="space-y-5 text-xs text-slate-800"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: VIEW SAMPLE FICTIONAL BILL -->
+  <div id="modalSampleBill" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs hidden items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="modalSampleBillTitle">
+    <div class="bg-white rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-5 space-y-3.5">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <div>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 uppercase">Fictional demo data — not an official electricity bill</span>
+          <h3 id="modalSampleBillTitle" class="text-sm sm:text-base font-bold text-slate-900 mt-0.5">Sample Commercial Electricity Bill (Chennai Demo)</h3>
+        </div>
+        <button id="btnCloseSampleBillModal" type="button" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">✕</button>
+      </div>
+
+      <div class="border border-slate-800 rounded-lg p-3 bg-slate-50 font-mono text-[11px] space-y-2">
+        <div class="flex justify-between border-b border-slate-300 pb-1">
+          <div>
+            <strong>TAMIL NADU COMMERCIAL DEMO UTILITY</strong>
+            <div class="text-slate-500">[FICTIONAL SAMPLE BILL FOR HACKATHON DEMO ONLY]</div>
+          </div>
+          <div class="text-right">
+            <div><strong>Bill Date:</strong> 02 Oct 2026</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-1 text-[11px] border-b border-slate-300 pb-1">
+          <div><strong>Consumer:</strong> Sri Murugan Café &amp; Filter Coffee House</div>
+          <div><strong>ID:</strong> DEMO-09-248-1104-X</div>
+          <div><strong>Tariff:</strong> LT Commercial Demo Tariff (Fictional)</div>
+          <div><strong>Sanctioned:</strong> 12.0 kW | 3-Phase</div>
+        </div>
+        <table class="w-full text-left text-[11px]">
+          <tbody>
+            <tr><td>Energy Charges (2,400 kWh × ₹8.50)</td><td class="text-right font-bold">₹20,400.00</td></tr>
+            <tr><td>Fixed Charges (12 kW × ₹150)</td><td class="text-right font-bold">₹1,800.00</td></tr>
+            <tr><td>Electricity Tax (5%)</td><td class="text-right font-bold">₹1,020.00</td></tr>
+            <tr><td>Other Charges</td><td class="text-right font-bold">₹180.00</td></tr>
+            <tr class="border-t border-slate-800 font-extrabold text-xs text-emerald-900 bg-emerald-50">
+              <td class="py-1">TOTAL BILL AMOUNT PAYABLE</td><td class="py-1 text-right">₹23,400.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button id="btnLoadSampleFromModal" type="button" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+          Load This Demo Bill Into Analyzer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CONFIRM RESET -->
+  <div id="modalConfirmReset" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs hidden items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="modalResetTitle">
+    <div class="bg-white rounded-xl max-w-sm w-full shadow-2xl border border-slate-200 p-5 space-y-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">!</div>
+        <div>
+          <h3 id="modalResetTitle" class="text-sm font-bold text-slate-900">Reset All Data to Default Demo?</h3>
+          <p class="text-xs text-slate-500">Overwrites custom inputs with default Chennai Café demo data.</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnCancelReset" type="button" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium hover:bg-slate-50">Cancel</button>
+        <button id="btnConfirmReset" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">Yes, Reset to Demo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INLINED CORE CALCULATION ENGINE & DEMO DATASET -->
+  <script>
+/**
+ * Bill-to-Savings — Core Savings Calculation & Recommendation Engine
+ * Pure, framework-agnostic business logic module (works in Node.js and Browser).
+ */
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.BillToSavingsEngine = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf'];
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  /**
+   * Validate uploaded bill file metadata on client or server
+   */
+  function validateBillUpload(fileMeta) {
+    if (!fileMeta || typeof fileMeta !== 'object') {
+      return { valid: false, error: 'No file metadata provided.' };
+    }
+    const { name = '', type = '', size = 0 } = fileMeta;
+    const lowerName = String(name).toLowerCase();
+    const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+    const hasValidMime = ALLOWED_FILE_TYPES.includes(type);
+
+    if (!hasValidMime && !hasValidExt) {
+      return {
+        valid: false,
+        error: 'Unsupported file type. Please upload a JPG, PNG, or PDF file.'
+      };
+    }
+    if (typeof size !== 'number' || size <= 0) {
+      return { valid: false, error: 'File is empty or size could not be determined.' };
+    }
+    if (size > MAX_FILE_SIZE_BYTES) {
+      return {
+        valid: false,
+        error: `File exceeds the maximum allowed size of 5 MB (${(size / (1024 * 1024)).toFixed(2)} MB uploaded).`
+      };
+    }
+    return { valid: true, error: null };
+  }
+
+  /**
+   * Sanitize a string or value against CSV formula injection (CSV Injection / DDE protection)
+   */
+  function sanitizeCsvCell(value) {
+    if (value === null || value === undefined) return '""';
+    let str = String(value);
+    // Strip HTML tags if any
+    str = str.replace(/<[^>]*>/g, '');
+    // If starts with =, +, -, @, tab, or carriage return, prefix with single quote
+    if (/^[=+\-@\t\r]/.test(str.trimStart())) {
+      str = "'" + str;
+    }
+    // Escape internal double quotes
+    const escaped = str.replace(/"/g, '""');
+    return `"${escaped}"`;
+  }
+
+  /**
+   * Escape HTML special characters to prevent XSS from OCR or user-entered bill text
+   */
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Validate bill and tariff inputs, returning normalized numbers and warnings/errors
+   */
+  function validateAndNormalizeInputs(rawBill = {}, rawTariff = {}, rawConfig = {}) {
+    const errors = [];
+    const warnings = [];
+
+    const unitsConsumedKwh =
+      rawBill.unitsConsumedKwh !== '' &&
+      rawBill.unitsConsumedKwh !== null &&
+      rawBill.unitsConsumedKwh !== undefined &&
+      rawBill.unitsConsumedKwh !== 'Not available'
+        ? Number(rawBill.unitsConsumedKwh)
+        : null;
+
+    const totalBillAmount =
+      rawBill.totalBillAmount !== '' &&
+      rawBill.totalBillAmount !== null &&
+      rawBill.totalBillAmount !== undefined &&
+      rawBill.totalBillAmount !== 'Not available'
+        ? Number(rawBill.totalBillAmount)
+        : null;
+
+    const energyCharges =
+      rawBill.energyCharges !== '' &&
+      rawBill.energyCharges !== null &&
+      rawBill.energyCharges !== undefined &&
+      rawBill.energyCharges !== 'Not available'
+        ? Number(rawBill.energyCharges)
+        : null;
+
+    const fixedCharges =
+      rawBill.fixedCharges !== '' &&
+      rawBill.fixedCharges !== null &&
+      rawBill.fixedCharges !== undefined &&
+      rawBill.fixedCharges !== 'Not available'
+        ? Number(rawBill.fixedCharges)
+        : null;
+
+    const taxesAndDuties =
+      rawBill.taxesAndDuties !== '' &&
+      rawBill.taxesAndDuties !== null &&
+      rawBill.taxesAndDuties !== undefined &&
+      rawBill.taxesAndDuties !== 'Not available'
+        ? Number(rawBill.taxesAndDuties)
+        : null;
+
+    if (unitsConsumedKwh === null || Number.isNaN(unitsConsumedKwh)) {
+      errors.push('Billed consumption (kWh) is missing or not available.');
+    } else if (unitsConsumedKwh < 0) {
+      errors.push('Billed consumption (kWh) cannot be negative.');
+    } else if (unitsConsumedKwh === 0) {
+      warnings.push('Billed consumption is 0 kWh. Energy reduction calculations will yield zero savings.');
+    } else if (unitsConsumedKwh > 500000) {
+      warnings.push('Very high monthly consumption detected (>500,000 kWh). Please verify meter reading and multiplier.');
+    }
+
+    if (totalBillAmount === null || Number.isNaN(totalBillAmount)) {
+      errors.push('Total bill amount (₹) is missing or not available.');
+    } else if (totalBillAmount < 0) {
+      errors.push('Total bill amount (₹) cannot be negative.');
+    } else if (totalBillAmount > 10000000) {
+      warnings.push('Very large bill amount detected (>₹1 Crore). Please double-check decimal places.');
+    }
+
+    // Applicable electricity rate resolution
+    const explicitMarginalRate =
+      rawTariff &&
+      rawTariff.marginalRatePerKwh !== '' &&
+      rawTariff.marginalRatePerKwh !== null &&
+      rawTariff.marginalRatePerKwh !== undefined
+        ? Number(rawTariff.marginalRatePerKwh)
+        : null;
+
+    let effectiveRatePerKwh = null;
+    if (
+      totalBillAmount !== null &&
+      !Number.isNaN(totalBillAmount) &&
+      unitsConsumedKwh !== null &&
+      !Number.isNaN(unitsConsumedKwh) &&
+      unitsConsumedKwh > 0
+    ) {
+      effectiveRatePerKwh = totalBillAmount / unitsConsumedKwh;
+    }
+
+    let applicableRatePerKwh = null;
+    let rateType = 'unavailable'; // 'verified_marginal' | 'user_marginal' | 'approximate_effective' | 'unavailable'
+    let rateLabel = 'Rate not available';
+
+    if (explicitMarginalRate !== null && !Number.isNaN(explicitMarginalRate) && explicitMarginalRate > 0) {
+      applicableRatePerKwh = explicitMarginalRate;
+      rateType = rawTariff.isOfficialVerified ? 'verified_marginal' : 'user_marginal';
+      rateLabel = rawTariff.isOfficialVerified
+        ? `Verified marginal energy rate (₹${explicitMarginalRate.toFixed(2)}/kWh)`
+        : `User/Demo marginal energy rate assumption (₹${explicitMarginalRate.toFixed(2)}/kWh)`;
+    } else if (
+      energyCharges !== null &&
+      !Number.isNaN(energyCharges) &&
+      energyCharges > 0 &&
+      unitsConsumedKwh !== null &&
+      unitsConsumedKwh > 0
+    ) {
+      applicableRatePerKwh = energyCharges / unitsConsumedKwh;
+      rateType = 'derived_energy_charge';
+      rateLabel = `Derived energy-charge rate (Energy Charges ÷ Total kWh = ₹${applicableRatePerKwh.toFixed(2)}/kWh)`;
+    } else if (effectiveRatePerKwh !== null && effectiveRatePerKwh > 0) {
+      applicableRatePerKwh = effectiveRatePerKwh;
+      rateType = 'approximate_effective';
+      rateLabel = `Approximate effective rate (Total Bill ÷ Total Billed kWh = ₹${effectiveRatePerKwh.toFixed(2)}/kWh — includes fixed charges, taxes & slabs)`;
+      warnings.push(
+        'Using approximate effective rate (Total Bill ÷ Total kWh) because marginal slab rate was not specified. Fixed charges and taxes mean actual marginal savings per kWh may be lower.'
+      );
+    } else {
+      warnings.push('No valid electricity tariff or effective rate could be calculated.');
+    }
+
+    if (explicitMarginalRate !== null && explicitMarginalRate <= 0) {
+      errors.push('Marginal electricity rate must be greater than ₹0/kWh.');
+    }
+
+    // Overall cap configuration (default 45%, bounded between 5% and 75%)
+    let overallCapFraction =
+      rawConfig.overallSavingsCapPercent !== undefined && rawConfig.overallSavingsCapPercent !== null
+        ? Number(rawConfig.overallSavingsCapPercent) / 100
+        : 0.45;
+    if (Number.isNaN(overallCapFraction) || overallCapFraction <= 0) {
+      overallCapFraction = 0.45;
+    }
+    overallCapFraction = Math.min(Math.max(overallCapFraction, 0.05), 0.75);
+
+    // CO2 emissions factor validation
+    let co2FactorKgPerKwh = null;
+    let co2FactorMeta = {
+      available: false,
+      value: null,
+      label: 'CO₂ factor not configured',
+      isDemoAssumption: true
+    };
+    if (
+      rawConfig.co2FactorKgPerKwh !== undefined &&
+      rawConfig.co2FactorKgPerKwh !== null &&
+      rawConfig.co2FactorKgPerKwh !== '' &&
+      Number(rawConfig.co2FactorKgPerKwh) > 0
+    ) {
+      co2FactorKgPerKwh = Number(rawConfig.co2FactorKgPerKwh);
+      co2FactorMeta = {
+        available: true,
+        value: co2FactorKgPerKwh,
+        label:
+          rawConfig.co2FactorSourceLabel ||
+          `Demo assumption: ${co2FactorKgPerKwh} kg CO₂/kWh (CEA India Grid Baseline reference assumption — verify for official audit reporting)`,
+        isDemoAssumption: rawConfig.co2FactorVerified !== true
+      };
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      normalized: {
+        unitsConsumedKwh: unitsConsumedKwh !== null && !Number.isNaN(unitsConsumedKwh) ? unitsConsumedKwh : 0,
+        totalBillAmount: totalBillAmount !== null && !Number.isNaN(totalBillAmount) ? totalBillAmount : 0,
+        energyCharges,
+        fixedCharges,
+        taxesAndDuties,
+        effectiveRatePerKwh,
+        applicableRatePerKwh,
+        rateType,
+        rateLabel,
+        overallCapFraction,
+        co2FactorKgPerKwh,
+        co2FactorMeta
+      }
+    };
+  }
+
+  /**
+   * Calculate equipment-level monthly energy consumption:
+   * kWh = Equipment power in kW * Operating hours per day * Number of operating days per month
+   */
+  function calculateEquipmentEnergy(equipmentItem) {
+    if (!equipmentItem || typeof equipmentItem !== 'object') {
+      return { valid: false, monthlyKwh: 0, error: 'Invalid equipment entry.' };
+    }
+    const powerKw = Number(equipmentItem.powerKw);
+    const quantity = equipmentItem.quantity !== undefined ? Number(equipmentItem.quantity) : 1;
+    const hoursPerDay = Number(equipmentItem.hoursPerDay);
+    const daysPerMonth = Number(equipmentItem.daysPerMonth);
+    const dutyCycle =
+      equipmentItem.dutyCycle !== undefined && equipmentItem.dutyCycle !== null
+        ? Number(equipmentItem.dutyCycle)
+        : 1.0;
+
+    if (Number.isNaN(powerKw) || powerKw < 0) {
+      return { valid: false, monthlyKwh: 0, error: 'Equipment power (kW) must be a non-negative number.' };
+    }
+    if (Number.isNaN(quantity) || quantity < 0) {
+      return { valid: false, monthlyKwh: 0, error: 'Quantity must be a non-negative number.' };
+    }
+    if (Number.isNaN(hoursPerDay) || hoursPerDay < 0 || hoursPerDay > 24) {
+      return {
+        valid: false,
+        monthlyKwh: 0,
+        error: 'Operating hours per day must be between 0 and 24 hours.'
+      };
+    }
+    if (Number.isNaN(daysPerMonth) || daysPerMonth < 0 || daysPerMonth > 31) {
+      return {
+        valid: false,
+        monthlyKwh: 0,
+        error: 'Operating days per month must be between 0 and 31 days.'
+      };
+    }
+    const cleanDuty = Number.isNaN(dutyCycle) ? 1.0 : Math.min(Math.max(dutyCycle, 0.05), 1.0);
+    const monthlyKwh = powerKw * quantity * hoursPerDay * daysPerMonth * cleanDuty;
+
+    return {
+      valid: true,
+      monthlyKwh: Math.round(monthlyKwh * 100) / 100,
+      error: null
+    };
+  }
+
+  /**
+   * Calculate simple payback in months
+   */
+  function calculateSimplePayback(implementationCost, monthlySavings) {
+    const cost = Number(implementationCost);
+    const savings = Number(monthlySavings);
+    if (Number.isNaN(cost) || cost < 0) {
+      return { months: null, label: 'Cost unknown' };
+    }
+    if (Number.isNaN(savings) || savings <= 0) {
+      return { months: null, label: 'No positive payback estimated.' };
+    }
+    if (cost === 0) {
+      return { months: 0, label: 'Immediate (₹0 upfront cost)' };
+    }
+    const months = cost / savings;
+    return {
+      months: Math.round(months * 10) / 10,
+      label: `${(Math.round(months * 10) / 10).toFixed(1)} months (~${(months / 12).toFixed(1)} yrs)`
+    };
+  }
+
+  /**
+   * Evaluate Time-of-Day (ToD) load shifting opportunity
+   * Note: Shifting usage changes timing, NOT total kWh consumed.
+   */
+  function evaluateTimeOfDayShifting(bill, tariff, questionnaire, simulatorOverrides = {}) {
+    const totalKwh = Math.max(0, Number(bill.unitsConsumedKwh) || 0);
+    const peakKwhFromBill =
+      bill.peakConsumptionKwh !== undefined &&
+      bill.peakConsumptionKwh !== null &&
+      bill.peakConsumptionKwh !== '' &&
+      bill.peakConsumptionKwh !== 'Not available'
+        ? Number(bill.peakConsumptionKwh)
+        : null;
+
+    const todSupported = Boolean(tariff && tariff.todSupported);
+    const peakRate = tariff && tariff.peakRatePerKwh ? Number(tariff.peakRatePerKwh) : null;
+    const offPeakRate = tariff && tariff.offPeakRatePerKwh ? Number(tariff.offPeakRatePerKwh) : null;
+    const normalRate = tariff && tariff.marginalRatePerKwh ? Number(tariff.marginalRatePerKwh) : null;
+
+    const canShiftAnswer = questionnaire ? questionnaire.canShiftUsage : 'Not sure';
+    const userAllowsShift =
+      simulatorOverrides.enableLoadShifting !== undefined
+        ? Boolean(simulatorOverrides.enableLoadShifting)
+        : canShiftAnswer === 'Yes' || canShiftAnswer === 'Maybe';
+
+    // Determine effective target rate for shifted load (off-peak if lower than peak, or normal rate)
+    const targetLowRate =
+      offPeakRate !== null && !Number.isNaN(offPeakRate) && offPeakRate > 0
+        ? offPeakRate
+        : normalRate;
+
+    const rateDifferential =
+      todSupported &&
+      peakRate !== null &&
+      targetLowRate !== null &&
+      !Number.isNaN(peakRate) &&
+      !Number.isNaN(targetLowRate)
+        ? peakRate - targetLowRate
+        : 0;
+
+    // Estimate peak consumption if not explicitly on bill (assumed 28% of total kWh in demo/inferred mode)
+    const estimatedPeakKwh =
+      peakKwhFromBill !== null && !Number.isNaN(peakKwhFromBill)
+        ? peakKwhFromBill
+        : Math.round(totalKwh * 0.28);
+
+    const peakDataProvenance =
+      peakKwhFromBill !== null && !Number.isNaN(peakKwhFromBill)
+        ? 'Entered/Extracted from Bill'
+        : 'Inferred assumption (28% of total billed kWh assumed in peak slots)';
+
+    // Shiftable fraction of peak load
+    const defaultShiftFraction = canShiftAnswer === 'Yes' ? 0.30 : canShiftAnswer === 'Maybe' ? 0.18 : 0.12;
+    const shiftFraction =
+      simulatorOverrides.loadShiftPercentOfPeak !== undefined
+        ? Math.min(Math.max(Number(simulatorOverrides.loadShiftPercentOfPeak) / 100, 0), 0.8)
+        : defaultShiftFraction;
+
+    const shiftableKwh = userAllowsShift ? Math.round(estimatedPeakKwh * shiftFraction) : 0;
+
+    if (!todSupported || rateDifferential <= 0) {
+      return {
+        applicable: false,
+        rewardingTariff: false,
+        peakWindowsLabel: (tariff && tariff.peakWindowsLabel) || 'Not specified on tariff',
+        offPeakWindowsLabel: (tariff && tariff.offPeakWindowsLabel) || 'Not specified on tariff',
+        estimatedPeakKwh,
+        peakDataProvenance,
+        shiftableKwh,
+        peakRate,
+        targetLowRate,
+        rateDifferential: Math.max(0, rateDifferential),
+        estimatedMonthlyBillSavings: 0,
+        estimatedAnnualBillSavings: 0,
+        energySavedKwh: 0, // Shifting does NOT save kWh
+        explanation:
+          'Your current tariff configuration does not show a positive Peak vs. Off-Peak rate differential. Shifting electricity usage to another time of day changes when power is used, but will not reduce your bill under a flat rate.',
+        assumptions: [
+          'Shifting electricity usage changes timing, not total kWh consumed (0 kWh energy reduction).',
+          'Financial savings require a verified Time-of-Day (ToD) tariff with lower off-peak or normal rates.'
+        ]
+      };
+    }
+
+    const monthlyFinancialSavings = Math.round(shiftableKwh * rateDifferential);
+    return {
+      applicable: true,
+      rewardingTariff: true,
+      peakWindowsLabel:
+        tariff.peakWindowsLabel || 'Demo Peak Slots: 06:00–10:00 & 18:00–22:00 (Verify with utility tariff schedule)',
+      offPeakWindowsLabel:
+        tariff.offPeakWindowsLabel || 'Demo Off-Peak / Normal Slots: 22:00–06:00 & 10:00–18:00',
+      estimatedPeakKwh,
+      peakDataProvenance,
+      shiftableKwh,
+      peakRate,
+      targetLowRate,
+      rateDifferential: Math.round(rateDifferential * 100) / 100,
+      estimatedMonthlyBillSavings: monthlyFinancialSavings,
+      estimatedAnnualBillSavings: monthlyFinancialSavings * 12,
+      energySavedKwh: 0, // Crucial safeguard: shifting timing does not reduce kWh
+      explanation: userAllowsShift
+        ? `Shifting approximately ${shiftableKwh} kWh/month of flexible loads (such as water heating, batch prep, battery charging, or pumping) from Peak (₹${peakRate.toFixed(2)}/kWh) to Off-Peak/Normal (₹${targetLowRate.toFixed(2)}/kWh) can save ~₹${monthlyFinancialSavings.toLocaleString('en-IN')}/month in bill charges without reducing total kWh used.`
+        : 'Your tariff has a Peak vs. Off-Peak differential, but flexible load shifting is currently marked as not feasible for your operating hours.',
+      assumptions: [
+        `Peak consumption (${estimatedPeakKwh} kWh/mo): ${peakDataProvenance}.`,
+        `Assumed ${(shiftFraction * 100).toFixed(0)}% of peak usage (${shiftableKwh} kWh/mo) is flexible and can be rescheduled.`,
+        `Rate differential of ₹${rateDifferential.toFixed(2)}/kWh (${tariff.isOfficialVerified ? 'User-verified tariff' : 'Demo assumption — not an official TANGEDCO/TNPDCL rate'}).`,
+        'Time-shifting reduces bill cost via tariff timing and counts as 0 kWh energy reduction.'
+      ]
+    };
+  }
+
+  /**
+   * Build personalized, ranked recommendations with double-counting prevention and energy caps
+   */
+  function generateSavingsPlan(state = {}) {
+    const rawBill = state.bill || {};
+    const rawTariff = state.tariff || {};
+    const questionnaire = state.questionnaire || {};
+    const equipmentList = Array.isArray(state.equipment) ? state.equipment : [];
+    const customAssumptions = state.actionAssumptions || {};
+    const simulator = state.simulator || {};
+    const config = state.config || {};
+
+    const validation = validateAndNormalizeInputs(rawBill, rawTariff, config);
+    const norm = validation.normalized;
+    const totalBilledKwh = norm.unitsConsumedKwh;
+    const totalBillAmount = norm.totalBillAmount;
+    const rate = norm.applicableRatePerKwh || 0;
+
+    // Operating hours multiplier inference from Questionnaire Q2
+    const hoursMap = {
+      'Less than 6 hours': 5,
+      '6–8 hours': 7.5,
+      '9–12 hours': 10.5,
+      'More than 12 hours': 14
+    };
+    const inferredDailyHours = hoursMap[questionnaire.operatingHours] || 9;
+    const equipUsageList = Array.isArray(questionnaire.equipmentUsed)
+      ? questionnaire.equipmentUsed
+      : ['Lighting', 'Fans', 'Air conditioner'];
+    const acIntensity = questionnaire.majorEquipmentFrequency || 'Most operating hours';
+    const businessType = questionnaire.businessType || 'Restaurant or café';
+    const mainPriority = questionnaire.mainPriority || 'Reduce my monthly bill.';
+
+    // Calculate bottom-up equipment kWh if Advanced Mode equipment rows are provided
+    let totalEquipmentEstimatedKwh = 0;
+    const equipmentByCategory = {
+      cooling: 0,
+      refrigeration: 0,
+      lighting: 0,
+      motors: 0,
+      computing: 0,
+      other: 0
+    };
+
+    const validatedEquipment = equipmentList.map((item) => {
+      const calc = calculateEquipmentEnergy(item);
+      const kwh = calc.valid ? calc.monthlyKwh : 0;
+      totalEquipmentEstimatedKwh += kwh;
+      const cat = item.category || 'other';
+      if (equipmentByCategory[cat] !== undefined) {
+        equipmentByCategory[cat] += kwh;
+      } else {
+        equipmentByCategory.other += kwh;
+      }
+      return { ...item, monthlyKwh: kwh, valid: calc.valid, validationError: calc.error };
+    });
+
+    const hasDetailedEquipment = totalEquipmentEstimatedKwh > 0 && equipmentList.length > 0;
+
+    // Estimate category shares of totalBilledKwh (bounded & reconciled so shares never exceed 100%)
+    let categoryBaselineKwh = {};
+    let categoryDataProvenance = {};
+
+    if (hasDetailedEquipment && totalBilledKwh > 0) {
+      // Scale or map equipment estimates against billed total so we never exceed 100% of billed kWh
+      const scaleFactor =
+        totalEquipmentEstimatedKwh > totalBilledKwh
+          ? totalBilledKwh / totalEquipmentEstimatedKwh
+          : 1.0;
+      Object.keys(equipmentByCategory).forEach((cat) => {
+        categoryBaselineKwh[cat] = Math.round(equipmentByCategory[cat] * scaleFactor);
+        categoryDataProvenance[cat] =
+          scaleFactor < 1
+            ? 'Entered equipment schedule (scaled to cap at 100% of billed kWh)'
+            : 'Entered equipment schedule (kW × hours × days)';
+      });
+    } else {
+      // Inferred category shares based on business type and selected equipment in Simple Mode
+      const hasAC =
+        equipUsageList.includes('Air conditioner') && acIntensity !== 'Not applicable' && acIntensity !== 'Rarely';
+      const hasFridge = equipUsageList.includes('Refrigerator or freezer');
+      const hasMotors = equipUsageList.includes('Motors or pumps');
+      const hasComputers = equipUsageList.includes('Computers');
+      const hasFans = equipUsageList.includes('Fans');
+
+      const rawWeights = {
+        cooling: hasAC ? (acIntensity === 'Almost continuously' ? 42 : acIntensity === 'Most operating hours' ? 34 : 18) : 0,
+        refrigeration: hasFridge ? (businessType === 'Restaurant or café' ? 26 : 16) : 0,
+        lighting: equipUsageList.includes('Lighting') ? (inferredDailyHours > 10 ? 20 : 15) : 8,
+        motors: hasMotors ? (businessType === 'Workshop' ? 32 : 14) : 0,
+        computing: hasComputers ? (businessType === 'Small office' ? 24 : 10) : 0,
+        other: (hasFans ? 10 : 5) + 8
+      };
+      const weightSum = Object.values(rawWeights).reduce((a, b) => a + b, 0) || 100;
+      Object.keys(rawWeights).forEach((cat) => {
+        categoryBaselineKwh[cat] = Math.round((totalBilledKwh * rawWeights[cat]) / weightSum);
+        categoryDataProvenance[cat] = 'Inferred from business type & questionnaire answers (not sub-metered)';
+      });
+    }
+
+    // Apply What-If Simulator overrides
+    const simHoursReductionPct = Number(simulator.operatingHoursReductionPct) || 0; // 0 to 30%
+    const simInstallLed = simulator.installLed !== undefined ? Boolean(simulator.installLed) : true;
+    const simOptimizeCooling = simulator.optimizeCooling !== undefined ? Boolean(simulator.optimizeCooling) : true;
+    const simBudgetLimit =
+      simulator.budgetLimitInr !== undefined && simulator.budgetLimitInr !== null && simulator.budgetLimitInr !== ''
+        ? Number(simulator.budgetLimitInr)
+        : null;
+    const simTop3LowestCostOnly = Boolean(simulator.top3LowestCostOnly);
+
+    // Build candidate recommendation definitions
+    // IMPORTANT SAFEGUARD: Recommendations targeting the same category pool draw sequentially from that category's remaining kWh
+    // and are subject to both a category cap and the global energy-savings cap.
+    const candidateDefs = [
+      {
+        id: 'ac-setpoint-schedule',
+        category: 'cooling',
+        actionType: 'energy_reduction',
+        title: 'Optimize Air-Conditioning Setpoint (24°C–25°C) & Operating Schedule',
+        applicableWhen: () =>
+          categoryBaselineKwh.cooling > 0 &&
+          (equipUsageList.includes('Air conditioner') || hasDetailedEquipment) &&
+          simOptimizeCooling,
+        whyItApplies: `Your ${businessType.toLowerCase()} uses air conditioning (${acIntensity.toLowerCase()}), which is estimated to account for ~${categoryBaselineKwh.cooling} kWh/month.`,
+        whatToDo:
+          'Set split/window AC thermostats to 24°C–25°C instead of 18°C–20°C, use ceiling fans to circulate cool air, keep doors/curtains closed, and switch off ACs 30 minutes before closing.',
+        defaultReductionPct: 16,
+        defaultCostInr: 0,
+        costRangeLabel: '₹0 (No-cost operational adjustment)',
+        difficulty: 'Easy',
+        confidence: hasDetailedEquipment ? 'Medium' : 'Low-Medium (Inferred load)'
+      },
+      {
+        id: 'ac-filter-coil-maintenance',
+        category: 'cooling',
+        actionType: 'energy_reduction',
+        title: 'Clean AC Filters Bi-Weekly & Service Condenser Coils',
+        applicableWhen: () =>
+          categoryBaselineKwh.cooling > 0 &&
+          (equipUsageList.includes('Air conditioner') || hasDetailedEquipment) &&
+          simOptimizeCooling,
+        whyItApplies:
+          'Dust-clogged filters and outdoor condenser coils in Indian commercial environments force AC compressors to run longer to achieve the same cooling.',
+        whatToDo:
+          'Wash indoor mesh filters every 2 weeks in-house and schedule a professional wet-service of condenser/evaporator coils before peak summer.',
+        defaultReductionPct: 9,
+        defaultCostInr: 1800,
+        costRangeLabel: '₹1,200 – ₹2,500 (Professional service)',
+        difficulty: 'Easy',
+        confidence: 'Medium'
+      },
+      {
+        id: 'led-lighting-upgrade',
+        category: 'lighting',
+        actionType: 'energy_reduction',
+        title: 'Replace Older Fluorescent Tubes / Halogens with High-Efficacy LEDs & Task Zoning',
+        applicableWhen: () =>
+          categoryBaselineKwh.lighting > 0 &&
+          (equipUsageList.includes('Lighting') || hasDetailedEquipment) &&
+          simInstallLed,
+        whyItApplies: `Lighting runs ~${inferredDailyHours} hours/day in your facility (~${categoryBaselineKwh.lighting} kWh/month estimated baseline).`,
+        whatToDo:
+          'Replace conventional T8/T12 fluorescent battens or CFLs with 18W–20W BIS-certified LED battens/downlights and wire display vs. back-office switches separately.',
+        defaultReductionPct: 35,
+        defaultCostInr: 4500,
+        costRangeLabel: '₹3,000 – ₹6,500 (Depends on fixture count)',
+        difficulty: 'Easy',
+        confidence: 'High (Well-established wattage reduction)'
+      },
+      {
+        id: 'refrigeration-gasket-coil-care',
+        category: 'refrigeration',
+        actionType: 'energy_reduction',
+        title: 'Maintain Refrigerator Door Seals, Condenser Coils & Thermostat Settings',
+        applicableWhen: () =>
+          categoryBaselineKwh.refrigeration > 0 &&
+          (equipUsageList.includes('Refrigerator or freezer') || hasDetailedEquipment),
+        whyItApplies: `Commercial refrigerators/freezers run 24/7 and represent an estimated ~${categoryBaselineKwh.refrigeration} kWh/month of base load.`,
+        whatToDo:
+          'Vacuum rear/bottom condenser coils quarterly, ensure 10 cm wall clearance for heat rejection, check rubber door gaskets with the paper-slip test, and avoid placing warm food uncovered inside.',
+        defaultReductionPct: 12,
+        defaultCostInr: 1200,
+        costRangeLabel: '₹500 – ₹2,000 (Cleaning & minor gasket repair)',
+        difficulty: 'Easy',
+        confidence: 'Medium'
+      },
+      {
+        id: 'standby-and-unused-switch-off',
+        category: 'other',
+        actionType: 'energy_reduction',
+        title: 'Eliminate Standby ("Vampire") Loads & Enforce End-of-Shift Switch-Off Checklist',
+        applicableWhen: () => totalBilledKwh > 0,
+        whyItApplies:
+          'Display boards, water dispensers, POS systems, chargers, exhaust fans, and idle equipment left running during low-traffic or closed hours add avoidable base load.',
+        whatToDo:
+          'Install labeled master power strips for non-essential equipment, assign closing switch-off responsibility to staff, and turn off signage/water heaters outside active business hours.',
+        defaultReductionPct: Math.min(40, 18 + Math.round(simHoursReductionPct * 0.8)),
+        defaultCostInr: 800,
+        costRangeLabel: '₹0 – ₹1,200 (Power strips & timer plugs)',
+        difficulty: 'Easy',
+        confidence: 'Medium'
+      },
+      {
+        id: 'operating-schedule-optimization',
+        category: 'all_non_refrigeration',
+        actionType: 'energy_reduction',
+        title: 'Stagger Startup & Trim Non-Essential Operating Hours',
+        applicableWhen: () => totalBilledKwh > 0 && (inferredDailyHours >= 9 || simHoursReductionPct > 0),
+        whyItApplies:
+          simHoursReductionPct > 0
+            ? `What-If Simulator set to trim effective equipment run-hours by ${simHoursReductionPct}%.`
+            : `Operating ${questionnaire.operatingHours || '9–12 hours'} per day creates savings potential during opening setup and closing wind-down hours.`,
+        whatToDo:
+          'Turn on high-load HVAC and kitchen/workshop machinery only when customer/production activity begins rather than at door-unlock time.',
+        defaultReductionPct: simHoursReductionPct > 0 ? Math.min(25, simHoursReductionPct) : 6,
+        defaultCostInr: 0,
+        costRangeLabel: '₹0 (Schedule discipline)',
+        difficulty: 'Easy',
+        confidence: 'Medium'
+      },
+      {
+        id: 'motor-pump-preventive-efficiency',
+        category: 'motors',
+        actionType: 'energy_reduction',
+        title: 'Preventive Maintenance & Idle Shut-Off for Motors, Pumps, or Compressors',
+        applicableWhen: () =>
+          categoryBaselineKwh.motors > 0 && (equipUsageList.includes('Motors or pumps') || hasDetailedEquipment),
+        whyItApplies: `Motors, pumps, or workshop machines account for an estimated ~${categoryBaselineKwh.motors} kWh/month.`,
+        whatToDo:
+          'Fix air/water leaks, check belt tension and lubrication, avoid running motors unloaded between jobs, and evaluate energy-efficient IE3 motors only when existing units require rewinding.',
+        defaultReductionPct: 14,
+        defaultCostInr: 2500,
+        costRangeLabel: '₹1,500 – ₹4,000 (Maintenance & float/timer switches)',
+        difficulty: 'Medium',
+        confidence: 'Medium'
+      },
+      {
+        id: 'computing-power-management',
+        category: 'computing',
+        actionType: 'energy_reduction',
+        title: 'Enable Automatic Sleep Mode on Computers, Copiers & Office Peripherals',
+        applicableWhen: () =>
+          categoryBaselineKwh.computing > 0 && (equipUsageList.includes('Computers') || hasDetailedEquipment),
+        whyItApplies: `Computers and office equipment account for an estimated ~${categoryBaselineKwh.computing} kWh/month.`,
+        whatToDo:
+          'Configure monitors to sleep after 10 minutes of inactivity, set PCs to sleep after 20 minutes, and power down printers/copiers overnight.',
+        defaultReductionPct: 20,
+        defaultCostInr: 0,
+        costRangeLabel: '₹0 (OS power settings)',
+        difficulty: 'Easy',
+        confidence: 'Medium'
+      },
+      {
+        id: 'monthly-submeter-anomaly-tracking',
+        category: 'tracking_advisory',
+        actionType: 'advisory',
+        title: 'Track Weekly Meter Readings & Investigate Unusual Consumption Spikes',
+        applicableWhen: () => true,
+        whyItApplies:
+          'Regularly logging your meter reading every Monday morning catches faulty thermostats, refrigerant leaks, or billing errors before a full billing cycle elapses.',
+        whatToDo:
+          'Take a smartphone photo of your electricity meter kWh register once a week and compare weekly kWh against business volume. Check equipment efficiency ratings before any end-of-life replacement.',
+        defaultReductionPct: 0,
+        defaultCostInr: 0,
+        costRangeLabel: '₹0 (Habit & logbook)',
+        difficulty: 'Easy',
+        confidence: 'High (Diagnostic best practice)'
+      }
+    ];
+
+    // Track remaining kWh in each category pool to prevent double-counting within the same category
+    const remainingPoolKwh = { ...categoryBaselineKwh };
+    const categoryMaxCapFraction = 0.55; // No single category can lose more than 55% of its baseline
+    const categorySavedSoFar = {
+      cooling: 0,
+      refrigeration: 0,
+      lighting: 0,
+      motors: 0,
+      computing: 0,
+      other: 0
+    };
+
+    const rawEnergyRecommendations = [];
+
+    candidateDefs.forEach((def) => {
+      if (!def.applicableWhen()) return;
+
+      const userOverride = customAssumptions[def.id] || {};
+      const reductionPct =
+        userOverride.reductionPct !== undefined && userOverride.reductionPct !== null
+          ? Math.min(Math.max(Number(userOverride.reductionPct), 0), 80)
+          : def.defaultReductionPct;
+      const implementationCost =
+        userOverride.implementationCost !== undefined && userOverride.implementationCost !== null
+          ? Math.max(0, Number(userOverride.implementationCost))
+          : def.defaultCostInr;
+
+      if (def.actionType === 'advisory') {
+        rawEnergyRecommendations.push({
+          id: def.id,
+          title: def.title,
+          category: def.category,
+          actionType: 'advisory',
+          whyItApplies: def.whyItApplies,
+          whatToDo: def.whatToDo,
+          baselineKwh: totalBilledKwh,
+          reductionPct: 0,
+          uncappedSavedKwh: 0,
+          savedKwh: 0,
+          capApplied: false,
+          monthlySavingsInr: 0,
+          annualSavingsInr: 0,
+          implementationCostInr: implementationCost,
+          costRangeLabel: def.costRangeLabel,
+          paybackMonths: null,
+          paybackLabel: 'Advisory / Diagnostic action (₹0 cost)',
+          co2ReductionKgMonthly: 0,
+          co2ReductionKgAnnual: 0,
+          difficulty: def.difficulty,
+          confidence: def.confidence,
+          assumptions: [
+            'Diagnostic & tracking habit — direct kWh savings are realized through early fault detection rather than claimed separately.'
+          ]
+        });
+        return;
+      }
+
+      let poolBaseline = 0;
+      let rawRequestedKwh = 0;
+
+      if (def.category === 'all_non_refrigeration') {
+        const eligibleCats = ['cooling', 'lighting', 'motors', 'computing', 'other'];
+        poolBaseline = eligibleCats.reduce((acc, c) => acc + (remainingPoolKwh[c] || 0), 0);
+        rawRequestedKwh = Math.round(poolBaseline * (reductionPct / 100));
+        // Deduct proportionally from remaining pools
+        if (poolBaseline > 0 && rawRequestedKwh > 0) {
+          eligibleCats.forEach((c) => {
+            const share = (remainingPoolKwh[c] || 0) / poolBaseline;
+            const deduct = Math.min(remainingPoolKwh[c] || 0, Math.round(rawRequestedKwh * share));
+            remainingPoolKwh[c] = Math.max(0, (remainingPoolKwh[c] || 0) - deduct);
+            categorySavedSoFar[c] = (categorySavedSoFar[c] || 0) + deduct;
+          });
+        }
+      } else {
+        const cat = def.category;
+        const catInitial = categoryBaselineKwh[cat] || 0;
+        const catRemaining = remainingPoolKwh[cat] || 0;
+        const maxAllowedForCat = Math.round(catInitial * categoryMaxCapFraction);
+        const headroomInCat = Math.max(0, maxAllowedForCat - (categorySavedSoFar[cat] || 0));
+
+        poolBaseline = catRemaining;
+        const desiredKwh = Math.round(catRemaining * (reductionPct / 100));
+        rawRequestedKwh = Math.min(desiredKwh, headroomInCat);
+
+        remainingPoolKwh[cat] = Math.max(0, catRemaining - rawRequestedKwh);
+        categorySavedSoFar[cat] = (categorySavedSoFar[cat] || 0) + rawRequestedKwh;
+      }
+
+      rawEnergyRecommendations.push({
+        id: def.id,
+        title: def.title,
+        category: def.category,
+        actionType: 'energy_reduction',
+        whyItApplies: def.whyItApplies,
+        whatToDo: def.whatToDo,
+        baselineKwh: poolBaseline,
+        reductionPct,
+        uncappedSavedKwh: rawRequestedKwh,
+        savedKwh: rawRequestedKwh, // Will be checked against overall bill cap next
+        capApplied: false,
+        implementationCostInr: implementationCost,
+        costRangeLabel: def.costRangeLabel,
+        difficulty: def.difficulty,
+        confidence: def.confidence,
+        provenance: categoryDataProvenance[def.category] || 'Inferred from bill & business profile'
+      });
+    });
+
+    // Apply overall energy-saving kWh cap across all energy_reduction actions
+    // Safeguard: "Apply a configurable overall cap to energy-saving actions so estimated reductions cannot exceed plausible usage."
+    const maxTotalSavedKwh = Math.round(totalBilledKwh * norm.overallCapFraction);
+    const sumUncappedSavedKwh = rawEnergyRecommendations
+      .filter((r) => r.actionType === 'energy_reduction')
+      .reduce((acc, r) => acc + r.uncappedSavedKwh, 0);
+
+    const globalCapTriggered = sumUncappedSavedKwh > maxTotalSavedKwh && sumUncappedSavedKwh > 0;
+    const globalScaleFactor = globalCapTriggered ? maxTotalSavedKwh / sumUncappedSavedKwh : 1.0;
+
+    let finalizedRecommendations = rawEnergyRecommendations.map((rec) => {
+      if (rec.actionType !== 'energy_reduction') return rec;
+
+      const finalSavedKwh = Math.round(rec.uncappedSavedKwh * globalScaleFactor);
+      const monthlySavingsInr = Math.round(finalSavedKwh * rate);
+      const annualSavingsInr = monthlySavingsInr * 12;
+      const payback = calculateSimplePayback(rec.implementationCostInr, monthlySavingsInr);
+      const co2Monthly =
+        norm.co2FactorKgPerKwh !== null ? Math.round(finalSavedKwh * norm.co2FactorKgPerKwh * 10) / 10 : null;
+      const co2Annual = co2Monthly !== null ? Math.round(co2Monthly * 12 * 10) / 10 : null;
+
+      const assumptions = [
+        `Category baseline available: ${rec.baselineKwh} kWh/mo (${rec.provenance}).`,
+        `Assumed achievable reduction: ${rec.reductionPct}% of remaining category load.`,
+        `Valued at ${norm.rateLabel}.`
+      ];
+      if (globalCapTriggered || rec.savedKwh < Math.round(rec.baselineKwh * (rec.reductionPct / 100))) {
+        assumptions.push(
+          `Double-counting & plausibility safeguard applied (capped at ${(norm.overallCapFraction * 100).toFixed(0)}% max total bill kWh reduction).`
+        );
+      }
+
+      return {
+        ...rec,
+        savedKwh: finalSavedKwh,
+        capApplied: globalCapTriggered,
+        monthlySavingsInr,
+        annualSavingsInr,
+        paybackMonths: payback.months,
+        paybackLabel: payback.label,
+        co2ReductionKgMonthly: co2Monthly,
+        co2ReductionKgAnnual: co2Annual,
+        assumptions
+      };
+    });
+
+    // Evaluate Time-of-Day shifting recommendation (EXEMPT from energy-saving kWh cap!)
+    const todAnalysis = evaluateTimeOfDayShifting(rawBill, rawTariff, questionnaire, simulator);
+
+    if (todAnalysis.rewardingTariff && todAnalysis.estimatedMonthlyBillSavings > 0) {
+      const todOverride = customAssumptions['tod-load-shifting'] || {};
+      const todCost =
+        todOverride.implementationCost !== undefined ? Math.max(0, Number(todOverride.implementationCost)) : 500;
+      const todPayback = calculateSimplePayback(todCost, todAnalysis.estimatedMonthlyBillSavings);
+
+      finalizedRecommendations.push({
+        id: 'tod-load-shifting',
+        title: 'Shift Flexible Electricity Loads from Peak to Off-Peak / Normal Tariff Hours',
+        category: 'time_of_day',
+        actionType: 'time_shifting', // Explicitly distinct from energy_reduction
+        whyItApplies: `Your tariff rewards off-peak usage with a ₹${todAnalysis.rateDifferential.toFixed(2)}/kWh differential, and you indicated flexible load shifting is "${questionnaire.canShiftUsage || 'Possible'}".`,
+        whatToDo: `Reschedule ~${todAnalysis.shiftableKwh} kWh/month of non-time-critical activities (water heating, batch prep, pumping, charging) outside Peak windows (${todAnalysis.peakWindowsLabel}).`,
+        baselineKwh: todAnalysis.estimatedPeakKwh,
+        reductionPct: 0,
+        uncappedSavedKwh: 0,
+        savedKwh: 0, // Safeguard: Shifting usage changes timing, NOT total kWh consumed!
+        shiftedKwh: todAnalysis.shiftableKwh,
+        capApplied: false,
+        monthlySavingsInr: todAnalysis.estimatedMonthlyBillSavings,
+        annualSavingsInr: todAnalysis.estimatedAnnualBillSavings,
+        implementationCostInr: todCost,
+        costRangeLabel: '₹0 – ₹1,500 (Timer switches or schedule shift)',
+        paybackMonths: todPayback.months,
+        paybackLabel: todPayback.label,
+        co2ReductionKgMonthly: 0,
+        co2ReductionKgAnnual: 0,
+        difficulty: 'Medium',
+        confidence: 'Medium (Depends on operational flexibility)',
+        assumptions: todAnalysis.assumptions
+      });
+    }
+
+    // Score & Rank recommendations transparently
+    // Criteria: expected monthly savings, low implementation cost, fast payback, feasibility (difficulty), confidence, and alignment with user's mainPriority
+    finalizedRecommendations = finalizedRecommendations.map((rec) => {
+      let score = 0;
+      // Savings weight (up to 45 pts)
+      score += Math.min(45, (rec.monthlySavingsInr / Math.max(1, totalBillAmount * 0.1)) * 20);
+      // Low-cost prioritization for small businesses (up to 25 pts)
+      if (rec.implementationCostInr === 0) score += 25;
+      else if (rec.implementationCostInr <= 1500) score += 20;
+      else if (rec.implementationCostInr <= 5000) score += 12;
+      else score += 4;
+      // Fast payback (up to 15 pts)
+      if (rec.paybackMonths !== null) {
+        if (rec.paybackMonths <= 1) score += 15;
+        else if (rec.paybackMonths <= 6) score += 12;
+        else if (rec.paybackMonths <= 12) score += 8;
+        else score += 3;
+      }
+      // Feasibility & confidence (up to 15 pts)
+      if (rec.difficulty === 'Easy') score += 8;
+      else if (rec.difficulty === 'Medium') score += 4;
+      if (String(rec.confidence).startsWith('High')) score += 7;
+      else if (String(rec.confidence).startsWith('Medium')) score += 4;
+
+      // Priority alignment boost
+      if (mainPriority === 'Find low-cost improvements.' && rec.implementationCostInr <= 1500) {
+        score += 12;
+      } else if (mainPriority === 'Reduce peak-time electricity usage.' && rec.actionType === 'time_shifting') {
+        score += 18;
+      } else if (mainPriority === 'Understand my electricity usage.' && rec.actionType === 'advisory') {
+        score += 15;
+      }
+
+      // Advisory actions without direct rupee savings stay included at the bottom unless priority is understanding usage
+      if (rec.actionType === 'advisory' && mainPriority !== 'Understand my electricity usage.') {
+        score = Math.min(score, 18);
+      }
+
+      const priorityLevel = score >= 55 ? 'High' : score >= 30 ? 'Medium' : 'Low';
+      return { ...rec, priorityScore: Math.round(score * 10) / 10, priority: priorityLevel };
+    });
+
+    // Sort descending by priorityScore, then by monthlySavingsInr descending
+    finalizedRecommendations.sort((a, b) => {
+      if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+      return b.monthlySavingsInr - a.monthlySavingsInr;
+    });
+
+    // Apply What-If Simulator filters (e.g., Top 3 lowest-cost actions only, or Budget cap)
+    if (simTop3LowestCostOnly) {
+      const sortedByCost = [...finalizedRecommendations]
+        .filter((r) => r.monthlySavingsInr > 0)
+        .sort((a, b) => a.implementationCostInr - b.implementationCostInr || b.monthlySavingsInr - a.monthlySavingsInr);
+      const allowedIds = new Set(sortedByCost.slice(0, 3).map((r) => r.id));
+      finalizedRecommendations = finalizedRecommendations.map((r) => ({
+        ...r,
+        includedInScenario: allowedIds.has(r.id)
+      }));
+    } else if (simBudgetLimit !== null && !Number.isNaN(simBudgetLimit) && simBudgetLimit >= 0) {
+      let runningBudget = 0;
+      finalizedRecommendations = finalizedRecommendations.map((r) => {
+        if (r.monthlySavingsInr <= 0 && r.actionType === 'advisory') {
+          return { ...r, includedInScenario: true };
+        }
+        if (runningBudget + r.implementationCostInr <= simBudgetLimit) {
+          runningBudget += r.implementationCostInr;
+          return { ...r, includedInScenario: true };
+        }
+        return { ...r, includedInScenario: false };
+      });
+    } else {
+      finalizedRecommendations = finalizedRecommendations.map((r) => ({
+        ...r,
+        includedInScenario: true
+      }));
+    }
+
+    // Assign rank numbers (1..N)
+    finalizedRecommendations = finalizedRecommendations.map((r, idx) => ({
+      ...r,
+      rank: idx + 1
+    }));
+
+    // Aggregate Scenario Summary (only for actions includedInScenario)
+    const activeRecs = finalizedRecommendations.filter((r) => r.includedInScenario);
+    const totalEnergySavedKwh = activeRecs
+      .filter((r) => r.actionType === 'energy_reduction')
+      .reduce((acc, r) => acc + r.savedKwh, 0);
+
+    const energyReductionRupeeSavings = activeRecs
+      .filter((r) => r.actionType === 'energy_reduction')
+      .reduce((acc, r) => acc + r.monthlySavingsInr, 0);
+
+    const timeShiftingRupeeSavings = activeRecs
+      .filter((r) => r.actionType === 'time_shifting')
+      .reduce((acc, r) => acc + r.monthlySavingsInr, 0);
+
+    // Ensure total rupee savings never exceed variable energy charges (or 75% of total bill if energy charges unknown)
+    const maxPlausibleRupeeSavings =
+      norm.energyCharges !== null && norm.energyCharges > 0
+        ? Math.round(norm.energyCharges * 0.75)
+        : Math.round(totalBillAmount * 0.65);
+
+    const rawMonthlyBillSavings = energyReductionRupeeSavings + timeShiftingRupeeSavings;
+    const totalMonthlyBillSavings =
+      totalBillAmount > 0 ? Math.min(rawMonthlyBillSavings, maxPlausibleRupeeSavings) : 0;
+    const totalAnnualBillSavings = totalMonthlyBillSavings * 12;
+
+    const totalImplementationCost = activeRecs.reduce((acc, r) => acc + r.implementationCostInr, 0);
+    const portfolioPayback = calculateSimplePayback(totalImplementationCost, totalMonthlyBillSavings);
+
+    const totalCo2MonthlyKg =
+      norm.co2FactorKgPerKwh !== null
+        ? Math.round(totalEnergySavedKwh * norm.co2FactorKgPerKwh * 10) / 10
+        : null;
+    const totalCo2AnnualKg =
+      totalCo2MonthlyKg !== null ? Math.round(totalCo2MonthlyKg * 12 * 10) / 10 : null;
+
+    const estimatedBillAfterChanges = Math.max(0, totalBillAmount - totalMonthlyBillSavings);
+    const estimatedKwhAfterChanges = Math.max(0, totalBilledKwh - totalEnergySavedKwh);
+
+    const highestPriorityAction =
+      activeRecs.find((r) => r.monthlySavingsInr > 0) || finalizedRecommendations[0] || null;
+
+    return {
+      validation,
+      summary: {
+        totalBillAmount,
+        totalBilledKwh,
+        effectiveRatePerKwh:
+          norm.effectiveRatePerKwh !== null ? Math.round(norm.effectiveRatePerKwh * 100) / 100 : null,
+        applicableRatePerKwh:
+          norm.applicableRatePerKwh !== null ? Math.round(norm.applicableRatePerKwh * 100) / 100 : null,
+        rateType: norm.rateType,
+        rateLabel: norm.rateLabel,
+        estimatedMonthlySavingsInr: totalMonthlyBillSavings,
+        estimatedAnnualSavingsInr: totalAnnualBillSavings,
+        energyReductionRupeeSavings,
+        timeShiftingRupeeSavings,
+        estimatedEnergySavedKwh: totalEnergySavedKwh,
+        estimatedEnergySavedPercent:
+          totalBilledKwh > 0 ? Math.round((totalEnergySavedKwh / totalBilledKwh) * 1000) / 10 : 0,
+        estimatedBillAfterInr: estimatedBillAfterChanges,
+        estimatedKwhAfter: estimatedKwhAfterChanges,
+        totalImplementationCostInr: totalImplementationCost,
+        portfolioPaybackMonths: portfolioPayback.months,
+        portfolioPaybackLabel: portfolioPayback.label,
+        co2MonthlyKg: totalCo2MonthlyKg,
+        co2AnnualKg: totalCo2AnnualKg,
+        co2FactorMeta: norm.co2FactorMeta,
+        globalCapTriggered,
+        overallCapPercent: Math.round(norm.overallCapFraction * 100),
+        recommendationsCount: finalizedRecommendations.length,
+        activeRecommendationsCount: activeRecs.length,
+        highestPriorityAction
+      },
+      categoryBreakdown: {
+        baselineKwh: categoryBaselineKwh,
+        provenance: categoryDataProvenance,
+        hasDetailedEquipment,
+        validatedEquipment
+      },
+      todAnalysis,
+      recommendations: finalizedRecommendations
+    };
+  }
+
+  /**
+   * Aggregate multiple meters without double-counting duplicate meter IDs or consumer numbers
+   */
+  function aggregateMeters(meters = []) {
+    if (!Array.isArray(meters) || meters.length === 0) {
+      return {
+        meterCount: 0,
+        uniqueMeters: [],
+        duplicateWarnings: [],
+        totalBilledKwh: 0,
+        totalBillAmountInr: 0,
+        totalMonthlySavingsInr: 0,
+        totalAnnualSavingsInr: 0,
+        totalEnergySavedKwh: 0,
+        totalImplementationCostInr: 0
+      };
+    }
+
+    const seenKeys = new Set();
+    const uniqueMeters = [];
+    const duplicateWarnings = [];
+
+    meters.forEach((m) => {
+      if (!m || typeof m !== 'object') return;
+      const dedupeKey = `${String(m.consumerNumber || m.id || '').trim().toLowerCase()}__${String(
+        m.billingPeriod || ''
+      )
+        .trim()
+        .toLowerCase()}`;
+
+      if (m.consumerNumber && m.consumerNumber !== 'Not available' && seenKeys.has(dedupeKey)) {
+        duplicateWarnings.push(
+          `Duplicate meter/billing period skipped to prevent double-counting: ${m.meterName || m.consumerNumber} (${
+            m.billingPeriod || 'Same period'
+          })`
+        );
+        return;
+      }
+      if (m.consumerNumber && m.consumerNumber !== 'Not available') {
+        seenKeys.add(dedupeKey);
+      }
+      uniqueMeters.push(m);
+    });
+
+    let totalBilledKwh = 0;
+    let totalBillAmountInr = 0;
+    let totalMonthlySavingsInr = 0;
+    let totalAnnualSavingsInr = 0;
+    let totalEnergySavedKwh = 0;
+    let totalImplementationCostInr = 0;
+
+    const evaluatedMeters = uniqueMeters.map((m) => {
+      const plan = generateSavingsPlan(m.state);
+      totalBilledKwh += plan.summary.totalBilledKwh;
+      totalBillAmountInr += plan.summary.totalBillAmount;
+      totalMonthlySavingsInr += plan.summary.estimatedMonthlySavingsInr;
+      totalAnnualSavingsInr += plan.summary.estimatedAnnualSavingsInr;
+      totalEnergySavedKwh += plan.summary.estimatedEnergySavedKwh;
+      totalImplementationCostInr += plan.summary.totalImplementationCostInr;
+      return {
+        ...m,
+        plan
+      };
+    });
+
+    return {
+      meterCount: evaluatedMeters.length,
+      uniqueMeters: evaluatedMeters,
+      duplicateWarnings,
+      totalBilledKwh,
+      totalBillAmountInr,
+      totalMonthlySavingsInr,
+      totalAnnualSavingsInr,
+      totalEnergySavedKwh,
+      totalImplementationCostInr
+    };
+  }
+
+  /**
+   * Generate safe CSV report string from a savings plan & state
+   */
+  function generateCsvReport(state = {}, planResult = null, options = { redactSensitive: true }) {
+    const plan = planResult || generateSavingsPlan(state);
+    const bill = state.bill || {};
+    const q = state.questionnaire || {};
+    const redact = options && options.redactSensitive !== false;
+
+    const consumerIdDisplay = redact
+      ? '[Redacted for Privacy]'
+      : bill.consumerNumber || 'Not available';
+
+    const rows = [
+      ['Bill-to-Savings — Electricity Cost Optimization Report'],
+      ['Data Notice', state.isDemoData ? 'Fictional demo data — not an official electricity bill.' : 'User-entered / reviewed bill data — estimates only, not a guaranteed reduction.'],
+      [],
+      ['SECTION 1: BUSINESS & BILL SUMMARY'],
+      ['Business Name', bill.businessName || 'Not available'],
+      ['Consumer / Account ID', consumerIdDisplay],
+      ['Electricity Provider', bill.provider || 'Not available'],
+      ['Tariff Category', bill.tariffCategory || 'Not available'],
+      ['Billing Period', bill.billingPeriod || 'Not available'],
+      ['Billed Consumption (kWh)', plan.summary.totalBilledKwh],
+      ['Total Bill Amount (INR)', plan.summary.totalBillAmount],
+      ['Approximate Effective Rate (INR/kWh)', plan.summary.effectiveRatePerKwh !== null ? plan.summary.effectiveRatePerKwh : 'Not available'],
+      ['Applicable Rate Used for Calculations', plan.summary.rateLabel],
+      ['Estimated Monthly Savings Opportunity (INR)', plan.summary.estimatedMonthlySavingsInr],
+      ['Estimated Annualized Savings Opportunity (INR)', plan.summary.estimatedAnnualSavingsInr],
+      ['Estimated Monthly Energy Reduction (kWh)', plan.summary.estimatedEnergySavedKwh],
+      ['Estimated Monthly Bill Savings from Load Shifting (INR)', plan.summary.timeShiftingRupeeSavings],
+      ['Total Implementation Investment (INR)', plan.summary.totalImplementationCostInr],
+      ['Estimated Portfolio Payback', plan.summary.portfolioPaybackLabel],
+      ['Estimated Monthly CO2 Reduction (kg)', plan.summary.co2MonthlyKg !== null ? plan.summary.co2MonthlyKg : 'Not available'],
+      ['CO2 Emissions Factor Label', plan.summary.co2FactorMeta.label],
+      [],
+      ['SECTION 2: QUESTIONNAIRE ANSWERS'],
+      ['1. Business Type', q.businessType || 'Not answered'],
+      ['2. Operating Hours', q.operatingHours || 'Not answered'],
+      ['3. Equipment Commonly Used', Array.isArray(q.equipmentUsed) ? q.equipmentUsed.join('; ') : 'Not answered'],
+      ['4. Major Equipment Usage Frequency', q.majorEquipmentFrequency || 'Not answered'],
+      ['5. Can Shift Electricity Usage to Another Time', q.canShiftUsage || 'Not answered'],
+      ['6. Main Priority', q.mainPriority || 'Not answered'],
+      [],
+      ['SECTION 3: RANKED RECOMMENDATIONS'],
+      [
+        'Rank',
+        'Priority',
+        'Action Title',
+        'Type',
+        'Included in Scenario',
+        'Estimated Saved kWh/mo',
+        'Estimated Shifted kWh/mo',
+        'Estimated Monthly Savings (INR)',
+        'Estimated Annualized Savings (INR)',
+        'Implementation Cost (INR)',
+        'Cost Range',
+        'Estimated Payback',
+        'Difficulty',
+        'Confidence',
+        'Why It Applies',
+        'What To Do',
+        'Assumptions'
+      ]
+    ];
+
+    plan.recommendations.forEach((r) => {
+      rows.push([
+        r.rank,
+        r.priority,
+        r.title,
+        r.actionType,
+        r.includedInScenario ? 'Yes' : 'No',
+        r.savedKwh || 0,
+        r.shiftedKwh || 0,
+        r.monthlySavingsInr,
+        r.annualSavingsInr,
+        r.implementationCostInr,
+        r.costRangeLabel,
+        r.paybackLabel,
+        r.difficulty,
+        r.confidence,
+        r.whyItApplies,
+        r.whatToDo,
+        (r.assumptions || []).join(' | ')
+      ]);
+    });
+
+    return rows.map((row) => row.map((cell) => sanitizeCsvCell(cell)).join(',')).join('\n');
+  }
+
+  return {
+    ALLOWED_FILE_TYPES,
+    MAX_FILE_SIZE_BYTES,
+    validateBillUpload,
+    sanitizeCsvCell,
+    escapeHtml,
+    validateAndNormalizeInputs,
+    calculateEquipmentEnergy,
+    calculateSimplePayback,
+    evaluateTimeOfDayShifting,
+    generateSavingsPlan,
+    aggregateMeters,
+    generateCsvReport
+  };
+});
+
+  </script>
+  <script>
+/**
+ * Bill-to-Savings — Fictional Demo Data & Sample Bills
+ * All figures are internally mathematically consistent and explicitly labelled:
+ * "Fictional demo data — not an official electricity bill."
+ */
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.BillToSavingsDemoData = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const DEMO_NOTICE = 'Fictional demo data — not an official electricity bill.';
+
+  // Primary sample business in Chennai, Tamil Nadu
+  const primaryDemoMeter = {
+    id: 'meter-tn-cafe-01',
+    meterName: 'Main Café & Bakery Meter (Ground Floor)',
+    isDemoData: true,
+    demoNotice: DEMO_NOTICE,
+    bill: {
+      provider: 'Tamil Nadu Commercial Distribution Demo Utility (Fictional Sample)',
+      consumerNumber: 'DEMO-09-248-1104-X',
+      businessName: 'Sri Murugan Café & Filter Coffee House (Fictional Demo)',
+      tariffCategory: 'LT Commercial Demo Tariff (Fictional — Not Official TANGEDCO/TNPDCL)',
+      billingPeriod: '01 Sep 2026 to 30 Sep 2026 (30 Days)',
+      unitsConsumedKwh: 2400,
+      energyCharges: 20400, // 2,400 kWh * ₹8.50/kWh = ₹20,400
+      fixedCharges: 1800, // 12 kW sanctioned load * ₹150/kW = ₹1,800
+      taxesAndDuties: 1020, // 5% electricity tax on energy charges = ₹1,020
+      otherCharges: 180, // Meter rent & power factor surcharge adjustment = ₹180
+      totalBillAmount: 23400, // 20,400 + 1,800 + 1,020 + 180 = ₹23,400 (Effective rate = ₹9.75/kWh)
+      todConsumptionAvailable: true,
+      peakConsumptionKwh: 720, // 30% during peak hours
+      offPeakConsumptionKwh: 480, // 20% during night/off-peak hours
+      normalConsumptionKwh: 1200, // 50% during daytime normal hours
+      fieldStatus: {
+        provider: 'verified',
+        consumerNumber: 'verified',
+        businessName: 'verified',
+        tariffCategory: 'uncertain',
+        billingPeriod: 'verified',
+        unitsConsumedKwh: 'verified',
+        energyCharges: 'verified',
+        fixedCharges: 'verified',
+        taxesAndDuties: 'verified',
+        otherCharges: 'uncertain',
+        totalBillAmount: 'verified',
+        peakConsumptionKwh: 'uncertain',
+        offPeakConsumptionKwh: 'uncertain'
+      }
+    },
+    tariff: {
+      isOfficialVerified: false,
+      tariffName: 'Fictional Tamil Nadu Commercial Demo Tariff (Editable Assumption)',
+      marginalRatePerKwh: 8.5,
+      todSupported: true,
+      peakRatePerKwh: 10.2, // Demo assumption: +20% peak rate
+      offPeakRatePerKwh: 7.65, // Demo assumption: -10% night/off-peak rate
+      peakWindowsLabel: '06:00–10:00 & 18:00–22:00 (Fictional Demo Assumption)',
+      offPeakWindowsLabel: '22:00–06:00 (Fictional Demo Assumption)'
+    },
+    questionnaire: {
+      businessType: 'Restaurant or café',
+      operatingHours: '9–12 hours',
+      equipmentUsed: [
+        'Air conditioner',
+        'Refrigerator or freezer',
+        'Fans',
+        'Lighting',
+        'Computers',
+        'Motors or pumps'
+      ],
+      majorEquipmentFrequency: 'Most operating hours',
+      canShiftUsage: 'Yes',
+      mainPriority: 'Reduce my monthly bill.'
+    },
+    equipment: [
+      {
+        id: 'eq-1',
+        name: 'Split Air Conditioners (1.5 Ton Non-Inverter)',
+        category: 'cooling',
+        powerKw: 1.6,
+        quantity: 2,
+        hoursPerDay: 9,
+        daysPerMonth: 30,
+        dutyCycle: 0.75 // 1.6 * 2 * 9 * 30 * 0.75 = 648 kWh/mo
+      },
+      {
+        id: 'eq-2',
+        name: 'Commercial Reach-In Chiller & Pastry Display Freezer',
+        category: 'refrigeration',
+        powerKw: 0.65,
+        quantity: 2,
+        hoursPerDay: 24,
+        daysPerMonth: 30,
+        dutyCycle: 0.65 // 0.65 * 2 * 24 * 30 * 0.65 = 608.4 kWh/mo
+      },
+      {
+        id: 'eq-3',
+        name: '36W Conventional Fluorescent Tube Battens & Signage',
+        category: 'lighting',
+        powerKw: 0.04,
+        quantity: 28,
+        hoursPerDay: 11,
+        daysPerMonth: 30,
+        dutyCycle: 1.0 // 0.04 * 28 * 11 * 30 = 369.6 kWh/mo
+      },
+      {
+        id: 'eq-4',
+        name: 'Commercial Wet Grinder, Dough Kneader & Water Pump',
+        category: 'motors',
+        powerKw: 1.5,
+        quantity: 2,
+        hoursPerDay: 4.5,
+        daysPerMonth: 30,
+        dutyCycle: 0.8 // 1.5 * 2 * 4.5 * 30 * 0.8 = 324 kWh/mo
+      },
+      {
+        id: 'eq-5',
+        name: 'POS Billing Terminal, CCTV DVR & Office PC',
+        category: 'computing',
+        powerKw: 0.18,
+        quantity: 2,
+        hoursPerDay: 12,
+        daysPerMonth: 30,
+        dutyCycle: 1.0 // 0.18 * 2 * 12 * 30 = 129.6 kWh/mo
+      },
+      {
+        id: 'eq-6',
+        name: 'Ceiling Fans, Exhaust Blowers & Coffee Urn Standby',
+        category: 'other',
+        powerKw: 0.95,
+        quantity: 1,
+        hoursPerDay: 11.2,
+        daysPerMonth: 30,
+        dutyCycle: 1.0 // ~319.2 kWh/mo -> Total equipment = ~2,398.8 kWh (~2,400 kWh)
+      }
+    ],
+    actionAssumptions: {},
+    simulator: {
+      operatingHoursReductionPct: 0,
+      installLed: true,
+      optimizeCooling: true,
+      enableLoadShifting: true,
+      loadShiftPercentOfPeak: 30,
+      budgetLimitInr: null,
+      top3LowestCostOnly: false
+    },
+    config: {
+      overallSavingsCapPercent: 45,
+      co2FactorKgPerKwh: 0.716,
+      co2FactorVerified: false,
+      co2FactorSourceLabel:
+        'Demo assumption: 0.716 kg CO₂/kWh (Reference assumption based on CEA India Grid weighted average — not an official project audit factor)'
+    }
+  };
+
+  // Secondary sample meter for Advanced Mode multi-meter portfolio testing
+  const secondaryDemoMeter = {
+    id: 'meter-tn-cafe-02',
+    meterName: 'First Floor Prep Kitchen & Cold Storage Meter',
+    isDemoData: true,
+    demoNotice: DEMO_NOTICE,
+    bill: {
+      provider: 'Tamil Nadu Commercial Distribution Demo Utility (Fictional Sample)',
+      consumerNumber: 'DEMO-09-248-1105-Y',
+      businessName: 'Sri Murugan Café — Annex Prep Kitchen (Fictional Demo)',
+      tariffCategory: 'LT Commercial Demo Tariff (Fictional — Not Official TANGEDCO/TNPDCL)',
+      billingPeriod: '01 Sep 2026 to 30 Sep 2026 (30 Days)',
+      unitsConsumedKwh: 1100,
+      energyCharges: 9350, // 1,100 * 8.50
+      fixedCharges: 900,
+      taxesAndDuties: 468,
+      otherCharges: 82,
+      totalBillAmount: 10800, // 9350 + 900 + 468 + 82 = 10,800
+      todConsumptionAvailable: true,
+      peakConsumptionKwh: 330,
+      offPeakConsumptionKwh: 220,
+      normalConsumptionKwh: 550,
+      fieldStatus: {
+        provider: 'verified',
+        consumerNumber: 'verified',
+        businessName: 'verified',
+        tariffCategory: 'uncertain',
+        billingPeriod: 'verified',
+        unitsConsumedKwh: 'verified',
+        energyCharges: 'verified',
+        fixedCharges: 'verified',
+        taxesAndDuties: 'verified',
+        otherCharges: 'verified',
+        totalBillAmount: 'verified',
+        peakConsumptionKwh: 'uncertain',
+        offPeakConsumptionKwh: 'uncertain'
+      }
+    },
+    tariff: {
+      isOfficialVerified: false,
+      tariffName: 'Fictional Tamil Nadu Commercial Demo Tariff (Editable Assumption)',
+      marginalRatePerKwh: 8.5,
+      todSupported: true,
+      peakRatePerKwh: 10.2,
+      offPeakRatePerKwh: 7.65,
+      peakWindowsLabel: '06:00–10:00 & 18:00–22:00 (Fictional Demo Assumption)',
+      offPeakWindowsLabel: '22:00–06:00 (Fictional Demo Assumption)'
+    },
+    questionnaire: {
+      businessType: 'Restaurant or café',
+      operatingHours: '9–12 hours',
+      equipmentUsed: ['Refrigerator or freezer', 'Fans', 'Lighting', 'Motors or pumps'],
+      majorEquipmentFrequency: 'Most operating hours',
+      canShiftUsage: 'Yes',
+      mainPriority: 'Reduce my monthly bill.'
+    },
+    equipment: [],
+    actionAssumptions: {},
+    simulator: {
+      operatingHoursReductionPct: 0,
+      installLed: true,
+      optimizeCooling: true,
+      enableLoadShifting: true,
+      loadShiftPercentOfPeak: 30,
+      budgetLimitInr: null,
+      top3LowestCostOnly: false
+    },
+    config: {
+      overallSavingsCapPercent: 45,
+      co2FactorKgPerKwh: 0.716,
+      co2FactorVerified: false,
+      co2FactorSourceLabel:
+        'Demo assumption: 0.716 kg CO₂/kWh (Reference assumption — not an official project audit factor)'
+    }
+  };
+
+  // Additional preset profiles for quick testing (Retail Shop, Salon, Small Office, Workshop)
+  const businessPresets = {
+    cafe: primaryDemoMeter,
+    retail: {
+      ...JSON.parse(JSON.stringify(primaryDemoMeter)),
+      id: 'preset-retail',
+      meterName: 'Kaveri Textiles & Garments (Fictional Retail Demo)',
+      bill: {
+        ...primaryDemoMeter.bill,
+        consumerNumber: 'DEMO-04-112-8890-R',
+        businessName: 'Kaveri Textiles & Readymades (Fictional Demo)',
+        unitsConsumedKwh: 1500,
+        energyCharges: 12750,
+        fixedCharges: 1200,
+        taxesAndDuties: 638,
+        otherCharges: 112,
+        totalBillAmount: 14700,
+        peakConsumptionKwh: 520,
+        offPeakConsumptionKwh: 180,
+        normalConsumptionKwh: 800
+      },
+      questionnaire: {
+        businessType: 'Retail shop',
+        operatingHours: '9–12 hours',
+        equipmentUsed: ['Air conditioner', 'Fans', 'Lighting', 'Computers'],
+        majorEquipmentFrequency: 'Most operating hours',
+        canShiftUsage: 'No',
+        mainPriority: 'Find low-cost improvements.'
+      },
+      equipment: []
+    },
+    workshop: {
+      ...JSON.parse(JSON.stringify(primaryDemoMeter)),
+      id: 'preset-workshop',
+      meterName: 'Guindy Precision Fabrication Works (Fictional Workshop Demo)',
+      bill: {
+        ...primaryDemoMeter.bill,
+        consumerNumber: 'DEMO-07-554-3321-W',
+        businessName: 'Guindy Precision Fabrication Works (Fictional Demo)',
+        unitsConsumedKwh: 3800,
+        energyCharges: 30400,
+        fixedCharges: 3200,
+        taxesAndDuties: 1520,
+        otherCharges: 280,
+        totalBillAmount: 35400,
+        peakConsumptionKwh: 1140,
+        offPeakConsumptionKwh: 760,
+        normalConsumptionKwh: 1900
+      },
+      questionnaire: {
+        businessType: 'Workshop',
+        operatingHours: '9–12 hours',
+        equipmentUsed: ['Fans', 'Lighting', 'Computers', 'Motors or pumps'],
+        majorEquipmentFrequency: 'Most operating hours',
+        canShiftUsage: 'Yes',
+        mainPriority: 'Reduce peak-time electricity usage.'
+      },
+      equipment: []
+    }
+  };
+
+  return {
+    DEMO_NOTICE,
+    primaryDemoMeter,
+    secondaryDemoMeter,
+    businessPresets
+  };
+});
+
+  </script>
+
+  <!-- APP CONTROLLER SCRIPT -->
+  <script>
+    (function () {
+      'use strict';
+
+      const Engine = window.BillToSavingsEngine;
+      const Demo = window.BillToSavingsDemoData;
+
+      const EQUIPMENT_OPTIONS = [
+        'Air conditioner',
+        'Refrigerator or freezer',
+        'Fans',
+        'Lighting',
+        'Computers',
+        'Motors or pumps',
+        'Other equipment'
+      ];
+
+      const BILL_FIELD_DEFS = [
+        { key: 'provider', label: 'Electricity Provider', type: 'text', placeholder: 'e.g., Tamil Nadu Commercial Demo Utility' },
+        { key: 'consumerNumber', label: 'Consumer / Account Identifier (Handled Carefully)', type: 'text', placeholder: 'e.g., DEMO-09-248-1104-X' },
+        { key: 'businessName', label: 'Business Name', type: 'text', placeholder: 'e.g., Sri Murugan Café' },
+        { key: 'tariffCategory', label: 'Tariff Category', type: 'text', placeholder: 'e.g., LT Commercial Demo Tariff' },
+        { key: 'billingPeriod', label: 'Billing Period', type: 'text', placeholder: 'e.g., 01 Sep 2026 to 30 Sep 2026' },
+        { key: 'unitsConsumedKwh', label: 'Units Consumed (kWh) *', type: 'number', placeholder: 'e.g., 2400' },
+        { key: 'totalBillAmount', label: 'Total Bill Amount (₹) *', type: 'number', placeholder: 'e.g., 23400' },
+        { key: 'energyCharges', label: 'Energy Charges (₹)', type: 'number', placeholder: 'Not available if blank' },
+        { key: 'fixedCharges', label: 'Fixed / Demand Charges (₹)', type: 'number', placeholder: 'Not available if blank' },
+        { key: 'taxesAndDuties', label: 'Taxes and Duties (₹)', type: 'number', placeholder: 'Not available if blank' },
+        { key: 'otherCharges', label: 'Other Charges / Adjustments (₹)', type: 'number', placeholder: 'Not available if blank' },
+        { key: 'peakConsumptionKwh', label: 'Peak Time-of-Day Usage (kWh)', type: 'number', placeholder: 'Optional ToD peak kWh' },
+        { key: 'offPeakConsumptionKwh', label: 'Off-Peak Usage (kWh)', type: 'number', placeholder: 'Optional ToD off-peak kWh' }
+      ];
+
+      function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+      function formatInr(val) {
+        if (val === null || val === undefined || Number.isNaN(Number(val))) return 'Not available';
+        return '₹' + Math.round(Number(val)).toLocaleString('en-IN');
+      }
+
+      let appState = {
+        mode: 'simple',
+        activeStep: 3,
+        redactConsumerId: true,
+        activeMeterIndex: 0,
+        meters: [
+          {
+            id: Demo.primaryDemoMeter.id,
+            meterName: Demo.primaryDemoMeter.meterName,
+            consumerNumber: Demo.primaryDemoMeter.bill.consumerNumber,
+            billingPeriod: Demo.primaryDemoMeter.bill.billingPeriod,
+            state: clone(Demo.primaryDemoMeter)
+          },
+          {
+            id: Demo.secondaryDemoMeter.id,
+            meterName: Demo.secondaryDemoMeter.meterName,
+            consumerNumber: Demo.secondaryDemoMeter.bill.consumerNumber,
+            billingPeriod: Demo.secondaryDemoMeter.bill.billingPeriod,
+            state: clone(Demo.secondaryDemoMeter)
+          }
+        ]
+      };
+
+      try {
+        const saved = localStorage.getItem('bill_to_savings_state_v3');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.meters) && parsed.meters.length > 0) {
+            appState = parsed;
+          }
+        }
+      } catch (e) {}
+
+      function saveState() {
+        try {
+          localStorage.setItem('bill_to_savings_state_v3', JSON.stringify(appState));
+        } catch (e) {}
+      }
+
+      function getCurrentMeterState() {
+        const m = appState.meters[appState.activeMeterIndex] || appState.meters[0];
+        return m.state;
+      }
+
+      function syncActiveMeterMetadata() {
+        const m = appState.meters[appState.activeMeterIndex];
+        if (!m) return;
+        m.consumerNumber = m.state.bill.consumerNumber;
+        m.billingPeriod = m.state.bill.billingPeriod;
+      }
+
+      let toastTimer = null;
+      function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        const box = document.getElementById('toastBox');
+        const msgEl = document.getElementById('toastMessage');
+        const iconEl = document.getElementById('toastIcon');
+        if (!container || !box || !msgEl) return;
+
+        msgEl.textContent = message;
+        if (type === 'error') {
+          box.className = 'rounded-xl shadow-xl border px-3.5 py-2.5 flex items-start gap-2.5 bg-rose-900 text-white border-rose-700';
+          iconEl.textContent = '⚠';
+        } else if (type === 'warning') {
+          box.className = 'rounded-xl shadow-xl border px-3.5 py-2.5 flex items-start gap-2.5 bg-amber-900 text-white border-amber-700';
+          iconEl.textContent = '▲';
+        } else {
+          box.className = 'rounded-xl shadow-xl border px-3.5 py-2.5 flex items-start gap-2.5 bg-slate-900 text-white border-slate-700';
+          iconEl.textContent = '✓';
+        }
+        container.classList.remove('hidden');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { container.classList.add('hidden'); }, 3800);
+      }
+
+      let scenarioChartInstance = null;
+      let categoryChartInstance = null;
+
+      function setStep(stepNumber) {
+        appState.activeStep = Number(stepNumber);
+        document.querySelectorAll('.step-view').forEach((el) => el.classList.add('hidden'));
+        const target = document.getElementById('stepView' + appState.activeStep);
+        if (target) target.classList.remove('hidden');
+
+        document.querySelectorAll('.workflow-tab').forEach((btn) => {
+          const s = Number(btn.getAttribute('data-step'));
+          if (s === appState.activeStep) {
+            btn.classList.add('app-tab-active');
+            btn.classList.add('step-active');
+          } else {
+            btn.classList.remove('app-tab-active');
+            btn.classList.remove('step-active');
+          }
+        });
+
+        renderAll();
+      }
+
+      function setMode(newMode) {
+        appState.mode = newMode === 'advanced' ? 'advanced' : 'simple';
+        const btnSimple = document.getElementById('btnModeSimple');
+        const btnAdv = document.getElementById('btnModeAdvanced');
+        const heroModeInd = document.getElementById('heroModeIndicator');
+        const advContainer = document.getElementById('advancedInputsContainer');
+        const simpleCallout = document.getElementById('simpleModeAdvCallout');
+
+        if (appState.mode === 'advanced') {
+          btnAdv.className = 'px-3 py-1 rounded-md text-xs font-bold transition-all bg-emerald-600 text-white shadow-xs';
+          btnSimple.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-300 hover:text-white';
+          if (heroModeInd) heroModeInd.textContent = 'Advanced Mode: Equipment Schedules, ToD Tariffs, Multi-Meter & Audit Controls';
+          if (advContainer) advContainer.classList.remove('hidden');
+          if (simpleCallout) simpleCallout.classList.add('hidden');
+          document.querySelectorAll('.adv-only-inline').forEach((el) => el.classList.remove('hidden'));
+        } else {
+          btnSimple.className = 'px-3 py-1 rounded-md text-xs font-bold transition-all bg-emerald-600 text-white shadow-xs';
+          btnAdv.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-300 hover:text-white';
+          if (heroModeInd) heroModeInd.textContent = 'Simple Mode: Plain English, 6 Quick Questions';
+          if (advContainer) advContainer.classList.add('hidden');
+          if (simpleCallout) simpleCallout.classList.remove('hidden');
+          document.querySelectorAll('.adv-only-inline').forEach((el) => el.classList.add('hidden'));
+        }
+        saveState();
+        renderAll();
+      }
+
+      function renderBillForm() {
+        const mState = getCurrentMeterState();
+        const bill = mState.bill;
+        const statusMap = bill.fieldStatus || {};
+        const grid = document.getElementById('billFieldsGrid');
+        if (!grid) return;
+
+        grid.innerHTML = BILL_FIELD_DEFS.map((field) => {
+          const rawVal = bill[field.key];
+          const isMissing = rawVal === null || rawVal === undefined || rawVal === '' || rawVal === 'Not available';
+          const st = isMissing ? 'missing' : (statusMap[field.key] || 'verified');
+
+          let badgeHtml = '';
+          let borderClass = 'border-slate-300 bg-white';
+          if (st === 'uncertain') {
+            badgeHtml = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-300">▲ Uncertain — Review</span>';
+            borderClass = 'border-amber-400 bg-amber-50/40';
+          } else if (st === 'missing') {
+            badgeHtml = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-300">Not available</span>';
+            borderClass = 'border-slate-200 bg-slate-50';
+          } else {
+            badgeHtml = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">● Verified</span>';
+          }
+
+          const displayVal = isMissing ? '' : Engine.escapeHtml(rawVal);
+
+          return `
+            <div class="p-2.5 rounded-lg border ${borderClass} space-y-1">
+              <div class="flex items-center justify-between gap-1">
+                <label for="billField_${field.key}" class="text-[11px] font-bold text-slate-800 truncate">${field.label}</label>
+                ${badgeHtml}
+              </div>
+              <input
+                id="billField_${field.key}"
+                data-bill-key="${field.key}"
+                type="${field.type}"
+                step="any"
+                value="${displayVal}"
+                placeholder="${isMissing ? 'Not available (click to enter)' : field.placeholder}"
+                class="bill-field-input w-full rounded border border-slate-300 px-2 py-1 text-xs bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+              />
+            </div>
+          `;
+        }).join('');
+
+        grid.querySelectorAll('.bill-field-input').forEach((inp) => {
+          inp.addEventListener('change', (e) => {
+            const k = e.target.getAttribute('data-bill-key');
+            const val = e.target.value.trim();
+            if (!mState.bill.fieldStatus) mState.bill.fieldStatus = {};
+            if (val === '') {
+              mState.bill[k] = 'Not available';
+              mState.bill.fieldStatus[k] = 'missing';
+            } else {
+              mState.bill[k] = e.target.type === 'number' ? Number(val) : val;
+              mState.bill.fieldStatus[k] = 'verified';
+            }
+            syncActiveMeterMetadata();
+            saveState();
+            renderAll();
+            showToast(`Updated "${k}" and recalculated savings plan.`);
+          });
+        });
+      }
+
+      function renderQuestionnaireAndAdvanced() {
+        const mState = getCurrentMeterState();
+        const q = mState.questionnaire;
+        const tariff = mState.tariff;
+        const config = mState.config;
+
+        const elType = document.getElementById('qBusinessType');
+        const elHours = document.getElementById('qOperatingHours');
+        const elFreq = document.getElementById('qMajorFreq');
+        const elShift = document.getElementById('qCanShift');
+        const elPrio = document.getElementById('qMainPriority');
+
+        if (elType) elType.value = q.businessType || 'Restaurant or café';
+        if (elHours) elHours.value = q.operatingHours || '9–12 hours';
+        if (elFreq) elFreq.value = q.majorEquipmentFrequency || 'Most operating hours';
+        if (elShift) elShift.value = q.canShiftUsage || 'Yes';
+        if (elPrio) elPrio.value = q.mainPriority || 'Reduce my monthly bill.';
+
+        const chkContainer = document.getElementById('qEquipmentCheckboxes');
+        if (chkContainer) {
+          const selected = Array.isArray(q.equipmentUsed) ? q.equipmentUsed : [];
+          chkContainer.innerHTML = EQUIPMENT_OPTIONS.map((eqName) => {
+            const isChecked = selected.includes(eqName);
+            return `
+              <label class="flex items-center gap-1.5 p-2 rounded bg-white border ${
+                isChecked ? 'border-emerald-500 bg-emerald-50/40 text-emerald-950 font-bold' : 'border-slate-200 text-slate-700'
+              } cursor-pointer text-xs">
+                <input type="checkbox" value="${Engine.escapeHtml(eqName)}" ${isChecked ? 'checked' : ''} class="q-equip-chk h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500" />
+                <span class="truncate">${Engine.escapeHtml(eqName)}</span>
+              </label>
+            `;
+          }).join('');
+
+          chkContainer.querySelectorAll('.q-equip-chk').forEach((chk) => {
+            chk.addEventListener('change', () => {
+              const allChecked = Array.from(chkContainer.querySelectorAll('.q-equip-chk:checked')).map((c) => c.value);
+              mState.questionnaire.equipmentUsed = allChecked;
+              saveState();
+              renderAll();
+            });
+          });
+        }
+
+        const advMarginal = document.getElementById('advMarginalRate');
+        const advTod = document.getElementById('advTodSupported');
+        const advPeak = document.getElementById('advPeakRate');
+        const advOffPeak = document.getElementById('advOffPeakRate');
+        const advPeakWin = document.getElementById('advPeakWindow');
+        const advOffPeakWin = document.getElementById('advOffPeakWindow');
+        const advCap = document.getElementById('advOverallCap');
+        const advCo2 = document.getElementById('advCo2Factor');
+
+        if (advMarginal) advMarginal.value = tariff.marginalRatePerKwh !== null && tariff.marginalRatePerKwh !== undefined ? tariff.marginalRatePerKwh : '';
+        if (advTod) advTod.value = String(Boolean(tariff.todSupported));
+        if (advPeak) advPeak.value = tariff.peakRatePerKwh !== null && tariff.peakRatePerKwh !== undefined ? tariff.peakRatePerKwh : '';
+        if (advOffPeak) advOffPeak.value = tariff.offPeakRatePerKwh !== null && tariff.offPeakRatePerKwh !== undefined ? tariff.offPeakRatePerKwh : '';
+        if (advPeakWin) advPeakWin.value = tariff.peakWindowsLabel || '';
+        if (advOffPeakWin) advOffPeakWin.value = tariff.offPeakWindowsLabel || '';
+        if (advCap) advCap.value = config.overallSavingsCapPercent !== undefined ? config.overallSavingsCapPercent : 45;
+        if (advCo2) advCo2.value = config.co2FactorKgPerKwh !== null && config.co2FactorKgPerKwh !== undefined ? config.co2FactorKgPerKwh : '';
+
+        const eqBody = document.getElementById('equipmentTableBody');
+        const eqSummary = document.getElementById('equipmentSummaryBar');
+        if (eqBody) {
+          const list = Array.isArray(mState.equipment) ? mState.equipment : [];
+          if (list.length === 0) {
+            eqBody.innerHTML = `<tr><td colspan="9" class="py-3 px-2 text-center text-slate-400 text-xs">No equipment rows entered. Click "+ Add Equipment Row" to add.</td></tr>`;
+          } else {
+            eqBody.innerHTML = list.map((item, idx) => {
+              const calc = Engine.calculateEquipmentEnergy(item);
+              return `
+                <tr>
+                  <td class="py-1 px-1.5"><input type="text" data-eq-idx="${idx}" data-eq-field="name" value="${Engine.escapeHtml(item.name)}" class="eq-input w-full rounded border border-slate-300 px-1.5 py-0.5 text-xs" /></td>
+                  <td class="py-1 px-1.5">
+                    <select data-eq-idx="${idx}" data-eq-field="category" class="eq-input rounded border border-slate-300 px-1.5 py-0.5 text-xs bg-white">
+                      <option value="cooling" ${item.category === 'cooling' ? 'selected' : ''}>Cooling / AC</option>
+                      <option value="refrigeration" ${item.category === 'refrigeration' ? 'selected' : ''}>Refrigeration</option>
+                      <option value="lighting" ${item.category === 'lighting' ? 'selected' : ''}>Lighting</option>
+                      <option value="motors" ${item.category === 'motors' ? 'selected' : ''}>Motors / Pumps</option>
+                      <option value="computing" ${item.category === 'computing' ? 'selected' : ''}>Computing / POS</option>
+                      <option value="other" ${item.category === 'other' ? 'selected' : ''}>Fans / Other</option>
+                    </select>
+                  </td>
+                  <td class="py-1 px-1.5"><input type="number" step="0.01" min="0" data-eq-idx="${idx}" data-eq-field="powerKw" value="${item.powerKw}" class="eq-input w-16 rounded border border-slate-300 px-1 py-0.5 text-xs font-mono" /></td>
+                  <td class="py-1 px-1.5"><input type="number" step="1" min="0" data-eq-idx="${idx}" data-eq-field="quantity" value="${item.quantity}" class="eq-input w-12 rounded border border-slate-300 px-1 py-0.5 text-xs font-mono" /></td>
+                  <td class="py-1 px-1.5"><input type="number" step="0.5" min="0" max="24" data-eq-idx="${idx}" data-eq-field="hoursPerDay" value="${item.hoursPerDay}" class="eq-input w-14 rounded border border-slate-300 px-1 py-0.5 text-xs font-mono" /></td>
+                  <td class="py-1 px-1.5"><input type="number" step="1" min="0" max="31" data-eq-idx="${idx}" data-eq-field="daysPerMonth" value="${item.daysPerMonth}" class="eq-input w-14 rounded border border-slate-300 px-1 py-0.5 text-xs font-mono" /></td>
+                  <td class="py-1 px-1.5"><input type="number" step="0.05" min="0.05" max="1.0" data-eq-idx="${idx}" data-eq-field="dutyCycle" value="${item.dutyCycle !== undefined ? item.dutyCycle : 1.0}" class="eq-input w-14 rounded border border-slate-300 px-1 py-0.5 text-xs font-mono" /></td>
+                  <td class="py-1 px-1.5 text-right font-mono font-bold">${calc.valid ? calc.monthlyKwh.toLocaleString('en-IN') + ' kWh' : 'Invalid'}</td>
+                  <td class="py-1 px-1.5 text-center"><button type="button" data-eq-del="${idx}" class="eq-del-btn text-rose-600 hover:text-rose-800 font-bold text-xs">✕</button></td>
+                </tr>
+              `;
+            }).join('');
+
+            eqBody.querySelectorAll('.eq-input').forEach((inp) => {
+              inp.addEventListener('change', (e) => {
+                const i = Number(e.target.getAttribute('data-eq-idx'));
+                const field = e.target.getAttribute('data-eq-field');
+                if (!mState.equipment[i]) return;
+                mState.equipment[i][field] = (field === 'name' || field === 'category') ? e.target.value : Number(e.target.value);
+                saveState();
+                renderAll();
+              });
+            });
+
+            eqBody.querySelectorAll('.eq-del-btn').forEach((btn) => {
+              btn.addEventListener('click', (e) => {
+                const i = Number(e.currentTarget.getAttribute('data-eq-del'));
+                mState.equipment.splice(i, 1);
+                saveState();
+                renderAll();
+              });
+            });
+          }
+
+          const totalEqKwh = (mState.equipment || []).reduce((acc, it) => {
+            const c = Engine.calculateEquipmentEnergy(it);
+            return acc + (c.valid ? c.monthlyKwh : 0);
+          }, 0);
+          if (eqSummary) {
+            eqSummary.innerHTML = `
+              <span><strong>Bottom-Up Equipment Schedule Total:</strong> ${Math.round(totalEqKwh).toLocaleString('en-IN')} kWh/month</span>
+              <span><strong>Billed Meter Consumption:</strong> ${(Number(mState.bill.unitsConsumedKwh) || 0).toLocaleString('en-IN')} kWh/month</span>
+            `;
+          }
+        }
+      }
+
+      function renderValidationBanners(plan) {
+        const container = document.getElementById('validationAlertContainer');
+        if (!container) return;
+        const { errors, warnings } = plan.validation;
+        if (errors.length === 0 && warnings.length === 0) {
+          container.classList.add('hidden');
+          container.innerHTML = '';
+          return;
+        }
+        container.classList.remove('hidden');
+        const htmlParts = [];
+        errors.forEach((err) => {
+          htmlParts.push(`
+            <div class="p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 text-xs flex items-center justify-between gap-2">
+              <div><strong class="font-bold">Input Error:</strong> ${Engine.escapeHtml(err)}</div>
+              <button type="button" class="underline font-semibold text-xs shrink-0" data-goto-step="1">Fix in Step 1 →</button>
+            </div>
+          `);
+        });
+        warnings.forEach((warn) => {
+          htmlParts.push(`
+            <div class="p-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-center justify-between gap-2">
+              <div><strong class="font-bold">Calculation Notice:</strong> ${Engine.escapeHtml(warn)}</div>
+            </div>
+          `);
+        });
+        container.innerHTML = htmlParts.join('');
+        container.querySelectorAll('[data-goto-step]').forEach((b) => {
+          b.addEventListener('click', () => setStep(1));
+        });
+      }
+
+      function renderDashboard(plan) {
+        const mState = getCurrentMeterState();
+        const s = plan.summary;
+
+        const elBill = document.getElementById('heroSnapBill');
+        const elKwh = document.getElementById('heroSnapKwh');
+        const elSavings = document.getElementById('heroSnapSavings');
+        const elAnnual = document.getElementById('heroSnapAnnual');
+        const elTag = document.getElementById('heroSnapDataTag');
+        const elTop = document.getElementById('heroSnapTopAction');
+
+        if (elBill) elBill.textContent = formatInr(s.totalBillAmount);
+        if (elKwh) elKwh.textContent = `${s.totalBilledKwh.toLocaleString('en-IN')} kWh billed`;
+        if (elSavings) elSavings.textContent = `${formatInr(s.estimatedMonthlySavingsInr)}/mo`;
+        if (elAnnual) elAnnual.textContent = `${formatInr(s.estimatedAnnualSavingsInr)}/yr annualized est.`;
+        if (elTag) elTag.textContent = mState.isDemoData ? 'Fictional Demo Data' : 'User Bill Data';
+        if (elTop) elTop.textContent = s.highestPriorityAction ? `Top Priority: ${s.highestPriorityAction.title}` : 'No active action';
+
+        const demoBadge = document.getElementById('demoActiveBadge');
+        if (demoBadge) {
+          if (mState.isDemoData) demoBadge.classList.remove('hidden');
+          else demoBadge.classList.add('hidden');
+        }
+
+        const kpiGrid = document.getElementById('dashboardKpiGrid');
+        if (kpiGrid) {
+          const effRateText = s.effectiveRatePerKwh !== null ? `₹${s.effectiveRatePerKwh.toFixed(2)}/kWh` : 'Not available';
+          const appRateText = s.applicableRatePerKwh !== null ? `₹${s.applicableRatePerKwh.toFixed(2)}/kWh` : 'Not available';
+          const co2Text = s.co2MonthlyKg !== null ? `${s.co2MonthlyKg.toLocaleString('en-IN')} kg/mo` : 'Not available';
+          const co2Sub = s.co2AnnualKg !== null
+            ? `${s.co2AnnualKg.toLocaleString('en-IN')} kg/yr (${s.co2FactorMeta.isDemoAssumption ? 'Demo factor 0.716' : 'Verified factor'})`
+            : 'CO₂ factor not configured';
+
+          kpiGrid.innerHTML = `
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">1. Total Billed Amount</div>
+              <div class="text-lg font-black text-slate-900 mt-0.5 font-mono">${formatInr(s.totalBillAmount)}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${Engine.escapeHtml(mState.bill.billingPeriod || 'Current Period')}</div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">2. Total Billed Consumption</div>
+              <div class="text-lg font-black text-slate-900 mt-0.5 font-mono">${s.totalBilledKwh.toLocaleString('en-IN')} kWh</div>
+              <div class="text-xs text-slate-500 mt-0.5">Est. reduction: <strong class="text-emerald-700">${s.estimatedEnergySavedKwh.toLocaleString('en-IN')} kWh/mo (${s.estimatedEnergySavedPercent}%)</strong></div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">3. Effective vs. Marginal Rate</div>
+              <div class="text-lg font-black text-slate-900 mt-0.5 font-mono">${effRateText} <span class="text-xs font-medium text-slate-500">eff.</span></div>
+              <div class="text-xs text-slate-600 mt-0.5">Calc rate used: <strong>${appRateText}</strong> (${s.rateType === 'approximate_effective' ? 'Approx. Effective' : 'Marginal Rate'})</div>
+            </div>
+
+            <div class="bg-emerald-50 rounded-xl border border-emerald-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-emerald-800 uppercase">4. Est. Monthly Savings Opportunity</div>
+              <div class="text-lg font-black text-emerald-700 mt-0.5 font-mono">${formatInr(s.estimatedMonthlySavingsInr)}<span class="text-xs font-semibold">/mo</span></div>
+              <div class="text-xs text-emerald-900 mt-0.5">Energy: ${formatInr(s.energyReductionRupeeSavings)} + ToD Shift: ${formatInr(s.timeShiftingRupeeSavings)}</div>
+            </div>
+
+            <div class="bg-emerald-50 rounded-xl border border-emerald-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-emerald-800 uppercase">5. Est. Annualized Savings</div>
+              <div class="text-lg font-black text-emerald-700 mt-0.5 font-mono">${formatInr(s.estimatedAnnualSavingsInr)}<span class="text-xs font-semibold">/yr</span></div>
+              <div class="text-xs text-emerald-900 mt-0.5">Annualized estimate (Monthly × 12) — not a guarantee</div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">6. Actions &amp; Simple Payback</div>
+              <div class="text-lg font-black text-slate-900 mt-0.5 font-mono">${s.activeRecommendationsCount} Actions</div>
+              <div class="text-xs text-slate-600 mt-0.5">Est. Cost: <strong>${formatInr(s.totalImplementationCostInr)}</strong> • Payback: <strong>${s.portfolioPaybackLabel}</strong></div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">7. Highest-Priority Action</div>
+              <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-2">${
+                s.highestPriorityAction ? Engine.escapeHtml(s.highestPriorityAction.title) : 'None available'
+              }</div>
+              <div class="text-xs text-emerald-700 font-semibold mt-0.5">${
+                s.highestPriorityAction ? `Saves ~${formatInr(s.highestPriorityAction.monthlySavingsInr)}/mo` : ''
+              }</div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">8. Est. CO₂ Reduction</div>
+              <div class="text-lg font-black text-slate-900 mt-0.5 font-mono">${co2Text}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${Engine.escapeHtml(co2Sub)}</div>
+            </div>
+          `;
+        }
+
+        const compCards = document.getElementById('scenarioComparisonCards');
+        if (compCards) {
+          compCards.innerHTML = `
+            <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-xs text-slate-500 font-medium">Current Bill &amp; Usage</div>
+              <div class="text-base font-bold text-slate-900 mt-0.5 font-mono">${formatInr(s.totalBillAmount)}</div>
+              <div class="text-xs text-slate-600">${s.totalBilledKwh.toLocaleString('en-IN')} kWh/mo</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div class="text-xs text-emerald-800 font-semibold">Improved Scenario (Est. After Changes)</div>
+              <div class="text-base font-extrabold text-emerald-700 mt-0.5 font-mono">${formatInr(s.estimatedBillAfterInr)}</div>
+              <div class="text-xs text-emerald-800">${s.estimatedKwhAfter.toLocaleString('en-IN')} kWh/mo</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-blue-50 border border-blue-200">
+              <div class="text-xs text-blue-900 font-semibold">Savings Split</div>
+              <div class="text-xs text-blue-950 mt-1">
+                <div>• <strong>Energy Saved:</strong> ${s.estimatedEnergySavedKwh} kWh (${formatInr(s.energyReductionRupeeSavings)})</div>
+                <div>• <strong>Time Shift:</strong> 0 kWh saved (${formatInr(s.timeShiftingRupeeSavings)} bill reduction)</div>
+              </div>
+            </div>
+          `;
+        }
+
+        const provBox = document.getElementById('provenanceBadgesBox');
+        if (provBox) {
+          provBox.innerHTML = `
+            <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+              <span class="font-bold text-slate-900">1. Billed / Entered Data:</span>
+              <span class="text-slate-600">Total Bill (${formatInr(s.totalBillAmount)}) &amp; Billed Units (${s.totalBilledKwh} kWh) from ${
+            mState.isDemoData ? 'Fictional Demo Bill' : 'User Bill Input'
+          }.</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+              <span class="font-bold text-slate-900">2. Equipment Category Breakdown:</span>
+              <span class="text-slate-600">${
+                plan.categoryBreakdown.hasDetailedEquipment
+                  ? 'Calculated from your Advanced Mode equipment schedule (kW × hours × days).'
+                  : 'Inferred from your 6 questionnaire answers (not sub-metered hardware measurements).'
+              }</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+              <span class="font-bold text-slate-900">3. Tariff &amp; Plausibility Safeguard:</span>
+              <span class="text-slate-600">${Engine.escapeHtml(s.rateLabel)}. Global energy cap set to ${s.overallCapPercent}%${
+            s.globalCapTriggered ? ' (Cap Active)' : ''
+          }.</span>
+            </div>
+          `;
+        }
+
+        renderCharts(plan);
+
+        const recContainer = document.getElementById('recommendationsListContainer');
+        if (recContainer) {
+          recContainer.innerHTML = plan.recommendations.map((rec) => {
+            const priorityBadge =
+              rec.priority === 'High' ? 'bg-emerald-100 text-emerald-900 border-emerald-300' :
+              rec.priority === 'Medium' ? 'bg-blue-100 text-blue-900 border-blue-300' :
+              'bg-slate-100 text-slate-700 border-slate-300';
+
+            const typeBadge =
+              rec.actionType === 'time_shifting'
+                ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-900 border border-purple-300">Time-of-Day Shift (0 kWh reduction)</span>'
+                : rec.actionType === 'advisory'
+                ? '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">Tracking &amp; Diagnostic</span>'
+                : `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">Saves ~${rec.savedKwh} kWh/mo</span>`;
+
+            const excludedNotice = !rec.includedInScenario
+              ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300">Excluded by What-If Budget / Top-3 Filter</span>'
+              : '';
+
+            const advEditorHtml =
+              appState.mode === 'advanced' && rec.actionType === 'energy_reduction'
+                ? `
+                <div class="mt-2.5 pt-2.5 border-t border-slate-200 bg-slate-50 p-2.5 rounded-lg flex flex-wrap items-center gap-3 text-xs">
+                  <span class="font-bold text-slate-800">Edit Action Assumptions (Advanced Mode):</span>
+                  <label class="flex items-center gap-1.5">
+                    <span>Assumed Reduction (%):</span>
+                    <input type="number" min="0" max="75" step="1" data-rec-id="${rec.id}" data-rec-field="reductionPct" value="${rec.reductionPct}" class="rec-assumption-input w-16 rounded border border-slate-300 px-2 py-1 bg-white font-semibold font-mono" />
+                  </label>
+                  <label class="flex items-center gap-1.5">
+                    <span>Implementation Cost (₹):</span>
+                    <input type="number" min="0" step="100" data-rec-id="${rec.id}" data-rec-field="implementationCost" value="${rec.implementationCostInr}" class="rec-assumption-input w-24 rounded border border-slate-300 px-2 py-1 bg-white font-semibold font-mono" />
+                  </label>
+                </div>
+              `
+                : '';
+
+            return `
+              <div class="rounded-xl border ${rec.includedInScenario ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50 opacity-70'} p-3.5 sm:p-4 shadow-xs transition">
+                <div class="flex flex-wrap items-start justify-between gap-2.5">
+                  <div class="space-y-1 max-w-3xl">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white font-mono">Rank #${rec.rank}</span>
+                      <span class="px-2 py-0.5 rounded-full text-xs font-bold border ${priorityBadge}">${rec.priority} Priority</span>
+                      ${typeBadge}
+                      <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium">Difficulty: ${rec.difficulty}</span>
+                      <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium">Confidence: ${Engine.escapeHtml(rec.confidence)}</span>
+                      ${excludedNotice}
+                    </div>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 pt-0.5">${Engine.escapeHtml(rec.title)}</h3>
+                  </div>
+
+                  <div class="text-right shrink-0 bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-1.5">
+                    <div class="text-xs text-emerald-800 font-semibold uppercase text-[10px]">Est. Savings</div>
+                    <div class="text-base sm:text-lg font-extrabold text-emerald-700 font-mono">${formatInr(rec.monthlySavingsInr)}<span class="text-xs font-normal">/mo</span></div>
+                    <div class="text-xs text-emerald-900 font-mono">${formatInr(rec.annualSavingsInr)}/yr</div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2.5 text-xs">
+                  <div>
+                    <strong class="text-slate-800 block">Why this applies to your business:</strong>
+                    <p class="text-slate-600 leading-relaxed mt-0.5">${Engine.escapeHtml(rec.whyItApplies)}</p>
+                  </div>
+                  <div>
+                    <strong class="text-slate-800 block">What you should do:</strong>
+                    <p class="text-slate-600 leading-relaxed mt-0.5">${Engine.escapeHtml(rec.whatToDo)}</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-2.5 border-t border-slate-100 text-xs">
+                  <div>
+                    <span class="text-slate-500 block text-[11px]">Implementation Cost:</span>
+                    <strong class="text-slate-900">${formatInr(rec.implementationCostInr)}</strong>
+                    <span class="text-slate-500 block text-[10px]">${Engine.escapeHtml(rec.costRangeLabel)}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block text-[11px]">Simple Payback:</span>
+                    <strong class="text-slate-900">${Engine.escapeHtml(rec.paybackLabel)}</strong>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block text-[11px]">Energy / Timing Impact:</span>
+                    <strong class="text-slate-900 font-mono">${
+                      rec.actionType === 'time_shifting'
+                        ? `${rec.shiftedKwh} kWh/mo shifted (0 kWh saved)`
+                        : `${rec.savedKwh} kWh/mo saved`
+                    }</strong>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block text-[11px]">Calculation Assumptions:</span>
+                    <span class="text-slate-600 text-[10px] truncate block">${Engine.escapeHtml((rec.assumptions || []).join(' '))}</span>
+                  </div>
+                </div>
+                ${advEditorHtml}
+              </div>
+            `;
+          }).join('');
+
+          recContainer.querySelectorAll('.rec-assumption-input').forEach((inp) => {
+            inp.addEventListener('change', (e) => {
+              const id = e.target.getAttribute('data-rec-id');
+              const field = e.target.getAttribute('data-rec-field');
+              if (!mState.actionAssumptions[id]) mState.actionAssumptions[id] = {};
+              mState.actionAssumptions[id][field] = Number(e.target.value);
+              saveState();
+              renderAll();
+              showToast(`Updated assumption for ${id}.`);
+            });
+          });
+        }
+      }
+
+      function renderCharts(plan) {
+        if (typeof window.Chart === 'undefined') return;
+        const s = plan.summary;
+
+        const ctx1 = document.getElementById('chartScenarioComparison');
+        if (ctx1) {
+          if (scenarioChartInstance) scenarioChartInstance.destroy();
+          scenarioChartInstance = new window.Chart(ctx1, {
+            type: 'bar',
+            data: {
+              labels: ['Current Bill (₹)', 'Est. Bill After Plan (₹)', 'Energy Savings (₹/mo)', 'ToD Shift Savings (₹/mo)'],
+              datasets: [{
+                label: 'Monthly Rupees (₹)',
+                data: [s.totalBillAmount, s.estimatedBillAfterInr, s.energyReductionRupeeSavings, s.timeShiftingRupeeSavings],
+                backgroundColor: ['#334155', '#059669', '#10b981', '#6366f1'],
+                borderRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { callback: (v) => '₹' + Number(v).toLocaleString('en-IN') }
+                }
+              }
+            }
+          });
+        }
+
+        const ctx2 = document.getElementById('chartCategoryBreakdown');
+        if (ctx2) {
+          if (categoryChartInstance) categoryChartInstance.destroy();
+          const catMap = plan.categoryBreakdown.baselineKwh || {};
+          categoryChartInstance = new window.Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+              labels: ['Cooling / AC', 'Refrigeration', 'Lighting', 'Motors / Pumps', 'Computing / POS', 'Fans & Other'],
+              datasets: [{
+                data: [catMap.cooling || 0, catMap.refrigeration || 0, catMap.lighting || 0, catMap.motors || 0, catMap.computing || 0, catMap.other || 0],
+                backgroundColor: ['#0ea5e9', '#06b6d4', '#f59e0b', '#8b5cf6', '#64748b', '#10b981']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+            }
+          });
+        }
+      }
+
+      function renderSimulatorAndTod(plan) {
+        const mState = getCurrentMeterState();
+        const sim = mState.simulator || {};
+        const s = plan.summary;
+        const tod = plan.todAnalysis;
+
+        const strip = document.getElementById('simulatorImpactStrip');
+        if (strip) {
+          strip.innerHTML = `
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Monthly Savings</div>
+              <div class="text-base font-extrabold text-emerald-400 font-mono">${formatInr(s.estimatedMonthlySavingsInr)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Annualized Savings</div>
+              <div class="text-base font-extrabold text-emerald-300 font-mono">${formatInr(s.estimatedAnnualSavingsInr)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Est. Bill After</div>
+              <div class="text-base font-bold text-white font-mono">${formatInr(s.estimatedBillAfterInr)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Energy Reduction</div>
+              <div class="text-base font-bold text-white font-mono">${s.estimatedEnergySavedKwh} kWh/mo</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Investment Needed</div>
+              <div class="text-base font-bold text-white font-mono">${formatInr(s.totalImplementationCostInr)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase">Simple Payback</div>
+              <div class="text-xs font-bold text-amber-300 mt-1">${Engine.escapeHtml(s.portfolioPaybackLabel)}</div>
+            </div>
+          `;
+        }
+
+        const hoursSlider = document.getElementById('simHoursSlider');
+        const hoursLabel = document.getElementById('simHoursValueLabel');
+        if (hoursSlider) hoursSlider.value = sim.operatingHoursReductionPct || 0;
+        if (hoursLabel) hoursLabel.textContent = `${sim.operatingHoursReductionPct || 0}%`;
+
+        const chkLed = document.getElementById('simChkLed');
+        const chkCooling = document.getElementById('simChkCooling');
+        const budgetInp = document.getElementById('simBudgetInput');
+        const chkTop3 = document.getElementById('simChkTop3LowCost');
+        const chkShift = document.getElementById('simChkLoadShift');
+        const shiftSlider = document.getElementById('simShiftSlider');
+        const shiftLabel = document.getElementById('simShiftValueLabel');
+
+        if (chkLed) chkLed.checked = sim.installLed !== false;
+        if (chkCooling) chkCooling.checked = sim.optimizeCooling !== false;
+        if (budgetInp) budgetInp.value = sim.budgetLimitInr !== null && sim.budgetLimitInr !== undefined ? sim.budgetLimitInr : '';
+        if (chkTop3) chkTop3.checked = Boolean(sim.top3LowestCostOnly);
+        if (chkShift) chkShift.checked = sim.enableLoadShifting !== false;
+        if (shiftSlider) shiftSlider.value = sim.loadShiftPercentOfPeak !== undefined ? sim.loadShiftPercentOfPeak : 30;
+        if (shiftLabel) shiftLabel.textContent = `${sim.loadShiftPercentOfPeak !== undefined ? sim.loadShiftPercentOfPeak : 30}%`;
+
+        const todPanel = document.getElementById('todDetailPanel');
+        if (todPanel) {
+          todPanel.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-slate-100 pb-2">
+              <div>
+                <span class="text-slate-500 text-[11px] block">Peak Time Windows:</span>
+                <strong class="text-slate-900 text-xs">${Engine.escapeHtml(tod.peakWindowsLabel)}</strong>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[11px] block">Off-Peak / Normal Windows:</span>
+                <strong class="text-slate-900 text-xs">${Engine.escapeHtml(tod.offPeakWindowsLabel)}</strong>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[11px] block">Est. Peak Consumption:</span>
+                <strong class="text-slate-900 font-mono">${tod.estimatedPeakKwh} kWh/mo</strong>
+                <span class="block text-[10px] text-slate-500">${Engine.escapeHtml(tod.peakDataProvenance)}</span>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[11px] block">Shiftable Load &amp; Differential:</span>
+                <strong class="text-emerald-700 font-mono">${tod.shiftableKwh} kWh/mo × ₹${tod.rateDifferential.toFixed(2)}/kWh = ${formatInr(tod.estimatedMonthlyBillSavings)}/mo</strong>
+              </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">${Engine.escapeHtml(tod.explanation)}</p>
+            <div class="text-[10px] text-slate-500 space-y-0.5">
+              ${(tod.assumptions || []).map((a) => `<div>• ${Engine.escapeHtml(a)}</div>`).join('')}
+            </div>
+          `;
+        }
+      }
+
+      function renderMultiMeters() {
+        const agg = Engine.aggregateMeters(appState.meters);
+        const badge = document.getElementById('meterCountBadge');
+        if (badge) badge.textContent = String(agg.meterCount);
+
+        const dupAlert = document.getElementById('multiMeterDuplicateAlert');
+        if (dupAlert) {
+          if (agg.duplicateWarnings.length > 0) {
+            dupAlert.classList.remove('hidden');
+            dupAlert.innerHTML = agg.duplicateWarnings.map((w) => `<div>⚠ ${Engine.escapeHtml(w)}</div>`).join('');
+          } else {
+            dupAlert.classList.add('hidden');
+            dupAlert.innerHTML = '';
+          }
+        }
+
+        const combCards = document.getElementById('multiMeterCombinedCards');
+        if (combCards) {
+          combCards.innerHTML = `
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-[10px] text-slate-500 font-semibold uppercase">Active Unique Meters</div>
+              <div class="text-base font-extrabold text-slate-900 mt-0.5 font-mono">${agg.meterCount} Meters</div>
+              <div class="text-[10px] text-slate-500">Deduplicated by Consumer ID &amp; Period</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-[10px] text-slate-500 font-semibold uppercase">Combined Billed Usage</div>
+              <div class="text-base font-extrabold text-slate-900 mt-0.5 font-mono">${agg.totalBilledKwh.toLocaleString('en-IN')} kWh</div>
+              <div class="text-[10px] text-emerald-700 font-semibold">Est. Saved: ${agg.totalEnergySavedKwh.toLocaleString('en-IN')} kWh/mo</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-[10px] text-slate-500 font-semibold uppercase">Combined Monthly Bill</div>
+              <div class="text-base font-extrabold text-slate-900 mt-0.5 font-mono">${formatInr(agg.totalBillAmountInr)}</div>
+              <div class="text-[10px] text-slate-500">Across all unique meters</div>
+            </div>
+            <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div class="text-[10px] text-emerald-800 font-bold uppercase">Combined Savings Opportunity</div>
+              <div class="text-base font-extrabold text-emerald-700 mt-0.5 font-mono">${formatInr(agg.totalMonthlySavingsInr)}/mo</div>
+              <div class="text-[10px] text-emerald-900">${formatInr(agg.totalAnnualSavingsInr)}/yr annualized est.</div>
+            </div>
+          `;
+        }
+
+        const tbody = document.getElementById('metersTableBody');
+        if (tbody) {
+          tbody.innerHTML = appState.meters.map((m, idx) => {
+            const p = Engine.generateSavingsPlan(m.state);
+            const isActive = idx === appState.activeMeterIndex;
+            return `
+              <tr class="${isActive ? 'bg-emerald-50/60' : ''}">
+                <td class="py-2 px-2.5 font-semibold text-slate-900">
+                  <input type="text" data-meter-idx="${idx}" value="${Engine.escapeHtml(m.meterName)}" class="meter-name-input rounded border border-slate-300 px-1.5 py-0.5 text-xs bg-white font-semibold" />
+                  ${isActive ? '<span class="ml-1.5 px-1.5 py-0.2 rounded bg-emerald-600 text-white text-[9px] font-bold">Active</span>' : ''}
+                </td>
+                <td class="py-2 px-2.5 text-slate-700 font-mono">${Engine.escapeHtml(m.state.bill.consumerNumber || 'Not available')}</td>
+                <td class="py-2 px-2.5 text-slate-700">${Engine.escapeHtml(m.state.bill.billingPeriod || 'Not available')}</td>
+                <td class="py-2 px-2.5 text-right font-medium font-mono">${p.summary.totalBilledKwh.toLocaleString('en-IN')} kWh</td>
+                <td class="py-2 px-2.5 text-right font-medium font-mono">${formatInr(p.summary.totalBillAmount)}</td>
+                <td class="py-2 px-2.5 text-right font-bold text-emerald-700 font-mono">${formatInr(p.summary.estimatedMonthlySavingsInr)}/mo</td>
+                <td class="py-2 px-2.5 text-center space-x-1">
+                  <button type="button" data-select-meter="${idx}" class="select-meter-btn px-2.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold">
+                    ${isActive ? 'Editing' : 'Switch To'}
+                  </button>
+                  ${appState.meters.length > 1 ? `<button type="button" data-delete-meter="${idx}" class="delete-meter-btn px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold">✕</button>` : ''}
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          tbody.querySelectorAll('.meter-name-input').forEach((inp) => {
+            inp.addEventListener('change', (e) => {
+              const i = Number(e.target.getAttribute('data-meter-idx'));
+              if (appState.meters[i]) {
+                appState.meters[i].meterName = e.target.value;
+                saveState();
+                renderAll();
+              }
+            });
+          });
+
+          tbody.querySelectorAll('.select-meter-btn').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              const i = Number(e.currentTarget.getAttribute('data-select-meter'));
+              appState.activeMeterIndex = i;
+              saveState();
+              renderAll();
+              showToast(`Switched active meter to "${appState.meters[i].meterName}".`);
+            });
+          });
+
+          tbody.querySelectorAll('.delete-meter-btn').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              const i = Number(e.currentTarget.getAttribute('data-delete-meter'));
+              if (appState.meters.length <= 1) return;
+              appState.meters.splice(i, 1);
+              if (appState.activeMeterIndex >= appState.meters.length) {
+                appState.activeMeterIndex = 0;
+              }
+              saveState();
+              renderAll();
+              showToast('Removed meter from session portfolio.');
+            });
+          });
+        }
+      }
+
+      function renderAuditReport(plan) {
+        const mState = getCurrentMeterState();
+        const b = mState.bill;
+        const q = mState.questionnaire;
+        const s = plan.summary;
+        const tod = plan.todAnalysis;
+        const redact = Boolean(appState.redactConsumerId);
+
+        const consumerDisplay = redact
+          ? '[Redacted for Privacy — Toggle checkbox above to show]'
+          : Engine.escapeHtml(b.consumerNumber || 'Not available');
+
+        const reportEl = document.getElementById('auditReportContent');
+        if (!reportEl) return;
+
+        reportEl.innerHTML = `
+          <div class="p-3.5 rounded-xl bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-emerald-300 font-bold">Bill-to-Savings — Professional Energy Audit Report</div>
+              <h3 class="text-base font-extrabold mt-0.5">${Engine.escapeHtml(b.businessName || 'Small Business Facility')}</h3>
+              <p class="text-xs text-slate-300">${
+                mState.isDemoData
+                  ? 'Fictional demo data — not an official electricity bill.'
+                  : 'User-submitted electricity bill analysis — decision-support estimates only.'
+              }</p>
+            </div>
+            <div class="text-right text-xs font-mono">
+              <div><strong>Billing Period:</strong> ${Engine.escapeHtml(b.billingPeriod || 'Not available')}</div>
+              <div><strong>Consumer ID:</strong> ${consumerDisplay}</div>
+              <div><strong>Tariff Category:</strong> ${Engine.escapeHtml(b.tariffCategory || 'Not available')}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 print-break-inside-avoid">
+            <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1.5">
+              <h4 class="font-bold text-slate-900 border-b border-slate-200 pb-1">1. Business Profile &amp; Six Questionnaire Answers</h4>
+              <ul class="space-y-1 text-xs">
+                <li><strong>Business Type:</strong> ${Engine.escapeHtml(q.businessType)}</li>
+                <li><strong>Operating Hours:</strong> ${Engine.escapeHtml(q.operatingHours)}</li>
+                <li><strong>Common Equipment:</strong> ${Engine.escapeHtml((q.equipmentUsed || []).join(', '))}</li>
+                <li><strong>Major Equipment Frequency:</strong> ${Engine.escapeHtml(q.majorEquipmentFrequency)}</li>
+                <li><strong>Can Shift Usage (ToD):</strong> ${Engine.escapeHtml(q.canShiftUsage)}</li>
+                <li><strong>Main Priority:</strong> ${Engine.escapeHtml(q.mainPriority)}</li>
+              </ul>
+            </div>
+
+            <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1.5">
+              <h4 class="font-bold text-slate-900 border-b border-slate-200 pb-1">2. Bill Summary &amp; Extracted Field Review Status</h4>
+              <ul class="space-y-1 text-xs">
+                <li><strong>Electricity Provider:</strong> ${Engine.escapeHtml(b.provider || 'Not available')} (${Engine.escapeHtml((b.fieldStatus && b.fieldStatus.provider) || 'verified')})</li>
+                <li><strong>Billed Consumption:</strong> ${s.totalBilledKwh.toLocaleString('en-IN')} kWh (${Engine.escapeHtml((b.fieldStatus && b.fieldStatus.unitsConsumedKwh) || 'verified')})</li>
+                <li><strong>Total Bill Amount:</strong> ${formatInr(s.totalBillAmount)} (Energy: ${formatInr(b.energyCharges)}, Fixed: ${formatInr(b.fixedCharges)}, Taxes: ${formatInr(b.taxesAndDuties)})</li>
+                <li><strong>Approximate Effective Rate:</strong> ${s.effectiveRatePerKwh !== null ? '₹' + s.effectiveRatePerKwh.toFixed(2) + '/kWh' : 'Not available'}</li>
+                <li><strong>Applicable Rate Used:</strong> ${Engine.escapeHtml(s.rateLabel)}</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-lg border border-emerald-200 bg-emerald-50/60 print-break-inside-avoid space-y-2">
+            <h4 class="font-bold text-emerald-950 border-b border-emerald-200 pb-1">3. Savings Opportunity, Investment, Payback &amp; CO₂ Summary</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs pt-1">
+              <div>
+                <span class="text-slate-600 block">Est. Monthly Bill Savings</span>
+                <strong class="text-sm text-emerald-800 font-mono">${formatInr(s.estimatedMonthlySavingsInr)}/mo</strong>
+              </div>
+              <div>
+                <span class="text-slate-600 block">Est. Annualized Savings</span>
+                <strong class="text-sm text-emerald-800 font-mono">${formatInr(s.estimatedAnnualSavingsInr)}/yr</strong>
+              </div>
+              <div>
+                <span class="text-slate-600 block">Implementation Cost &amp; Payback</span>
+                <strong class="text-slate-900 font-mono">${formatInr(s.totalImplementationCostInr)} (${Engine.escapeHtml(s.portfolioPaybackLabel)})</strong>
+              </div>
+              <div>
+                <span class="text-slate-600 block">Est. CO₂ Reduction</span>
+                <strong class="text-slate-900 font-mono">${s.co2MonthlyKg !== null ? `${s.co2MonthlyKg} kg/mo (${s.co2AnnualKg} kg/yr)` : 'Not available'}</strong>
+                <span class="block text-[10px] text-slate-500">${Engine.escapeHtml(s.co2FactorMeta.label)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 print-break-inside-avoid">
+            <h4 class="font-bold text-slate-900">4. Ranked Action Plan &amp; Assumptions</h4>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-xs border border-slate-300 border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 border-b border-slate-300 text-left font-bold">
+                    <th class="p-1.5 border border-slate-300">Rank</th>
+                    <th class="p-1.5 border border-slate-300">Action &amp; Recommended Steps</th>
+                    <th class="p-1.5 border border-slate-300 text-right">kWh Impact</th>
+                    <th class="p-1.5 border border-slate-300 text-right">Est. Savings/mo</th>
+                    <th class="p-1.5 border border-slate-300 text-right">Est. Cost</th>
+                    <th class="p-1.5 border border-slate-300">Payback &amp; Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${plan.recommendations.map((r) => `
+                    <tr class="border-b border-slate-200">
+                      <td class="p-1.5 border border-slate-300 font-bold font-mono">#${r.rank} (${r.priority})</td>
+                      <td class="p-1.5 border border-slate-300">
+                        <div class="font-bold text-slate-900">${Engine.escapeHtml(r.title)}</div>
+                        <div class="text-slate-600 text-[11px] mt-0.5">${Engine.escapeHtml(r.whatToDo)}</div>
+                      </td>
+                      <td class="p-1.5 border border-slate-300 text-right font-mono">${r.actionType === 'time_shifting' ? `${r.shiftedKwh} kWh shifted (0 kWh saved)` : `${r.savedKwh} kWh saved`}</td>
+                      <td class="p-1.5 border border-slate-300 text-right font-bold text-emerald-700 font-mono">${formatInr(r.monthlySavingsInr)}</td>
+                      <td class="p-1.5 border border-slate-300 text-right font-mono">${formatInr(r.implementationCostInr)}</td>
+                      <td class="p-1.5 border border-slate-300">${Engine.escapeHtml(r.paybackLabel)} • ${Engine.escapeHtml(r.confidence)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 print-break-inside-avoid">
+            <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <h4 class="font-bold text-slate-900">5. Time-of-Day (ToD) Optimization Summary</h4>
+              <p class="text-xs text-slate-700">${Engine.escapeHtml(tod.explanation)}</p>
+              <p class="text-[10px] text-slate-500">Peak Window: ${Engine.escapeHtml(tod.peakWindowsLabel)} | Off-Peak: ${Engine.escapeHtml(tod.offPeakWindowsLabel)}</p>
+            </div>
+            <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <h4 class="font-bold text-slate-900">6. Calculation Methodology, Limitations &amp; Next Steps</h4>
+              <p class="text-xs text-slate-700">
+                Formulas: <code>kWh = kW × hours × days</code>; <code>Savings = Avoided kWh × Applicable Rate</code>; <code>Payback = Cost ÷ Monthly Savings</code>. Competing actions in the same category deduct sequentially from remaining category kWh and are capped at ${s.overallCapPercent}% overall.
+              </p>
+              <p class="text-xs font-semibold text-emerald-900">
+                Recommended Next Step: Start with Rank #1 &amp; #2 low-cost operational actions this week and log weekly meter kWh readings every Monday.
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAll() {
+        const mState = getCurrentMeterState();
+        const plan = Engine.generateSavingsPlan(mState);
+
+        renderValidationBanners(plan);
+        renderBillForm();
+        renderQuestionnaireAndAdvanced();
+        renderDashboard(plan);
+        renderSimulatorAndTod(plan);
+        renderMultiMeters();
+        renderAuditReport(plan);
+      }
+
+      function initEventListeners() {
+        document.getElementById('btnModeSimple').addEventListener('click', () => {
+          setMode('simple');
+          showToast('Switched to Simple Mode. All entered data preserved.');
+        });
+        document.getElementById('btnModeAdvanced').addEventListener('click', () => {
+          setMode('advanced');
+          showToast('Switched to Advanced Mode. Equipment & tariff editors unlocked.');
+        });
+        document.getElementById('btnCalloutSwitchAdv').addEventListener('click', () => {
+          setMode('advanced');
+          showToast('Unlocked Advanced Mode inputs below.');
+        });
+
+        document.querySelectorAll('.workflow-tab').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const step = Number(btn.getAttribute('data-step'));
+            setStep(step);
+          });
+        });
+
+        document.getElementById('heroBtnAnalyzeBill').addEventListener('click', () => setStep(1));
+        document.getElementById('heroBtnTryDemo').addEventListener('click', () => {
+          loadPresetProfile('cafe');
+          setStep(3);
+          showToast('Loaded Fictional Demo Business (Chennai Café) — viewing ranked savings plan.');
+        });
+        document.getElementById('heroBtnManualEntry').addEventListener('click', () => {
+          clearCurrentBillForManualEntry();
+          setStep(1);
+          showToast('Ready for manual bill entry. Fill in your bill numbers below.');
+        });
+        const jumpBtn = document.getElementById('heroBtnJumpDashboard');
+        if (jumpBtn) jumpBtn.addEventListener('click', () => setStep(3));
+
+        document.getElementById('presetSelect').addEventListener('change', (e) => {
+          loadPresetProfile(e.target.value);
+          showToast(`Loaded "${e.target.options[e.target.selectedIndex].text}" preset.`);
+        });
+
+        const modalBill = document.getElementById('modalSampleBill');
+        document.getElementById('btnViewSampleBill').addEventListener('click', () => {
+          modalBill.classList.remove('hidden');
+          modalBill.classList.add('flex');
+        });
+        document.getElementById('btnCloseSampleBillModal').addEventListener('click', () => {
+          modalBill.classList.add('hidden');
+          modalBill.classList.remove('flex');
+        });
+        document.getElementById('btnLoadSampleFromModal').addEventListener('click', () => {
+          loadPresetProfile('cafe');
+          modalBill.classList.add('hidden');
+          modalBill.classList.remove('flex');
+          setStep(3);
+          showToast('Loaded sample fictional Chennai Café bill into analyzer.');
+        });
+
+        const modalReset = document.getElementById('modalConfirmReset');
+        document.getElementById('btnResetDemoPrompt').addEventListener('click', () => {
+          modalReset.classList.remove('hidden');
+          modalReset.classList.add('flex');
+        });
+        document.getElementById('btnCancelReset').addEventListener('click', () => {
+          modalReset.classList.add('hidden');
+          modalReset.classList.remove('flex');
+        });
+        document.getElementById('btnConfirmReset').addEventListener('click', () => {
+          appState.activeMeterIndex = 0;
+          appState.meters = [
+            {
+              id: Demo.primaryDemoMeter.id,
+              meterName: Demo.primaryDemoMeter.meterName,
+              consumerNumber: Demo.primaryDemoMeter.bill.consumerNumber,
+              billingPeriod: Demo.primaryDemoMeter.bill.billingPeriod,
+              state: clone(Demo.primaryDemoMeter)
+            },
+            {
+              id: Demo.secondaryDemoMeter.id,
+              meterName: Demo.secondaryDemoMeter.meterName,
+              consumerNumber: Demo.secondaryDemoMeter.bill.consumerNumber,
+              billingPeriod: Demo.secondaryDemoMeter.bill.billingPeriod,
+              state: clone(Demo.secondaryDemoMeter)
+            }
+          ];
+          saveState();
+          modalReset.classList.add('hidden');
+          modalReset.classList.remove('flex');
+          renderAll();
+          showToast('Reset application to default fictional demo data.');
+        });
+
+        document.getElementById('btnCloseToast').addEventListener('click', () => {
+          document.getElementById('toastContainer').classList.add('hidden');
+        });
+
+        document.getElementById('btnStep1LoadDemoBill').addEventListener('click', () => {
+          loadPresetProfile('cafe');
+          showToast('Loaded fictional sample bill values.');
+        });
+        document.getElementById('btnStep1ClearForManual').addEventListener('click', () => {
+          clearCurrentBillForManualEntry();
+          showToast('Cleared fields for manual entry. Missing fields marked "Not available".');
+        });
+        document.getElementById('btnStep1Next').addEventListener('click', () => setStep(2));
+
+        document.getElementById('fileBillUpload').addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          handleBillFileSelection({ name: file.name, type: file.type, size: file.size });
+        });
+
+        document.getElementById('btnSimPartialOcr').addEventListener('click', () => {
+          const mState = getCurrentMeterState();
+          mState.isDemoData = false;
+          mState.bill = {
+            provider: 'TANGEDCO / TNPDCL (OCR Candidate — Review)',
+            consumerNumber: '09-248-XXXX-UNCERTAIN',
+            businessName: 'Uploaded Shop Bill Scan',
+            tariffCategory: 'Not available',
+            billingPeriod: 'Sep 2026 (OCR Uncertain)',
+            unitsConsumedKwh: 1850,
+            totalBillAmount: 17950,
+            energyCharges: 'Not available',
+            fixedCharges: 'Not available',
+            taxesAndDuties: 'Not available',
+            otherCharges: 'Not available',
+            peakConsumptionKwh: 'Not available',
+            offPeakConsumptionKwh: 'Not available',
+            fieldStatus: {
+              provider: 'uncertain',
+              consumerNumber: 'uncertain',
+              businessName: 'verified',
+              tariffCategory: 'missing',
+              billingPeriod: 'uncertain',
+              unitsConsumedKwh: 'uncertain',
+              totalBillAmount: 'verified',
+              energyCharges: 'missing',
+              fixedCharges: 'missing',
+              taxesAndDuties: 'missing',
+              otherCharges: 'missing',
+              peakConsumptionKwh: 'missing',
+              offPeakConsumptionKwh: 'missing'
+            }
+          };
+          mState.tariff.marginalRatePerKwh = null;
+          syncActiveMeterMetadata();
+          saveState();
+          renderAll();
+          const statusBox = document.getElementById('uploadStatusBox');
+          statusBox.className = 'rounded-lg p-3 text-xs border bg-amber-50 border-amber-300 text-amber-950';
+          statusBox.innerHTML =
+            '<strong>Partial OCR Extraction Simulated:</strong> Uncertain fields are highlighted in amber for your review, and missing fields are marked "Not available" (never invented).';
+          statusBox.classList.remove('hidden');
+          showToast('Simulated partial OCR scan — review amber fields & effective rate fallback.', 'warning');
+        });
+
+        document.getElementById('btnSimInvalidFile').addEventListener('click', () => {
+          handleBillFileSelection({ name: 'suspicious_invoice.exe', type: 'application/x-msdownload', size: 204800 });
+        });
+
+        ['qBusinessType', 'qOperatingHours', 'qMajorFreq', 'qCanShift', 'qMainPriority'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener('change', (e) => {
+            const mState = getCurrentMeterState();
+            const mapKey = {
+              qBusinessType: 'businessType',
+              qOperatingHours: 'operatingHours',
+              qMajorFreq: 'majorEquipmentFrequency',
+              qCanShift: 'canShiftUsage',
+              qMainPriority: 'mainPriority'
+            }[id];
+            mState.questionnaire[mapKey] = e.target.value;
+            saveState();
+            renderAll();
+          });
+        });
+
+        document.getElementById('advMarginalRate').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.marginalRatePerKwh = e.target.value.trim() === '' ? null : Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advTodSupported').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.todSupported = e.target.value === 'true';
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advPeakRate').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.peakRatePerKwh = Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advOffPeakRate').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.offPeakRatePerKwh = Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advPeakWindow').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.peakWindowsLabel = e.target.value;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advOffPeakWindow').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.tariff.offPeakWindowsLabel = e.target.value;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advOverallCap').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.config.overallSavingsCapPercent = Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('advCo2Factor').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.config.co2FactorKgPerKwh = e.target.value.trim() === '' ? null : Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+
+        document.getElementById('btnAddEquipmentRow').addEventListener('click', () => {
+          const mState = getCurrentMeterState();
+          if (!Array.isArray(mState.equipment)) mState.equipment = [];
+          mState.equipment.push({
+            id: 'eq-' + Date.now(),
+            name: 'New Appliance / Load',
+            category: 'other',
+            powerKw: 0.5,
+            quantity: 1,
+            hoursPerDay: 8,
+            daysPerMonth: 26,
+            dutyCycle: 1.0
+          });
+          saveState();
+          renderAll();
+          showToast('Added new equipment row.');
+        });
+
+        document.getElementById('btnStep2Prev').addEventListener('click', () => setStep(1));
+        document.getElementById('btnStep2Next').addEventListener('click', () => setStep(3));
+
+        document.getElementById('btnDashOpenSimulator').addEventListener('click', () => setStep(4));
+        document.getElementById('btnDashOpenReport').addEventListener('click', () => setStep(6));
+
+        document.getElementById('simHoursSlider').addEventListener('input', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.operatingHoursReductionPct = Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('simChkLed').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.installLed = e.target.checked;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('simChkCooling').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.optimizeCooling = e.target.checked;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('simBudgetInput').addEventListener('input', (e) => {
+          const mState = getCurrentMeterState();
+          const v = e.target.value.trim();
+          mState.simulator.budgetLimitInr = v === '' ? null : Number(v);
+          saveState();
+          renderAll();
+        });
+        document.querySelectorAll('.sim-quick-budget').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const mState = getCurrentMeterState();
+            const raw = btn.getAttribute('data-budget');
+            mState.simulator.budgetLimitInr = raw === '' ? null : Number(raw);
+            saveState();
+            renderAll();
+          });
+        });
+        document.getElementById('simChkTop3LowCost').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.top3LowestCostOnly = e.target.checked;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('simChkLoadShift').addEventListener('change', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.enableLoadShifting = e.target.checked;
+          saveState();
+          renderAll();
+        });
+        document.getElementById('simShiftSlider').addEventListener('input', (e) => {
+          const mState = getCurrentMeterState();
+          mState.simulator.loadShiftPercentOfPeak = Number(e.target.value);
+          saveState();
+          renderAll();
+        });
+        document.getElementById('btnResetSimulator').addEventListener('click', () => {
+          const mState = getCurrentMeterState();
+          mState.simulator = {
+            operatingHoursReductionPct: 0,
+            installLed: true,
+            optimizeCooling: true,
+            enableLoadShifting: true,
+            loadShiftPercentOfPeak: 30,
+            budgetLimitInr: null,
+            top3LowestCostOnly: false
+          };
+          saveState();
+          renderAll();
+          showToast('Reset What-If Simulator to original baseline scenario.');
+        });
+
+        document.getElementById('btnAddNewMeter').addEventListener('click', () => {
+          const nextNum = appState.meters.length + 1;
+          const newMeterState = clone(Demo.secondaryDemoMeter);
+          newMeterState.bill.consumerNumber = `DEMO-09-248-110${nextNum + 5}-M`;
+          newMeterState.bill.businessName = `Branch / Sub-Meter #${nextNum} (Fictional Demo)`;
+          appState.meters.push({
+            id: 'meter-' + Date.now(),
+            meterName: `Meter #${nextNum} — Additional Service Connection`,
+            consumerNumber: newMeterState.bill.consumerNumber,
+            billingPeriod: newMeterState.bill.billingPeriod,
+            state: newMeterState
+          });
+          appState.activeMeterIndex = appState.meters.length - 1;
+          saveState();
+          renderAll();
+          showToast(`Added Meter #${nextNum} and switched active context.`);
+        });
+
+        document.getElementById('btnTestDuplicateMeter').addEventListener('click', () => {
+          const first = appState.meters[0];
+          appState.meters.push({
+            id: 'dup-' + Date.now(),
+            meterName: first.meterName + ' (Duplicate Copy)',
+            consumerNumber: first.state.bill.consumerNumber,
+            billingPeriod: first.state.bill.billingPeriod,
+            state: clone(first.state)
+          });
+          saveState();
+          renderAll();
+          showToast('Added a duplicate meter entry — see anti-double-counting safeguard banner!', 'warning');
+        });
+
+        document.getElementById('chkRedactConsumerId').addEventListener('change', (e) => {
+          appState.redactConsumerId = e.target.checked;
+          saveState();
+          renderAll();
+        });
+
+        document.getElementById('btnExportCsv').addEventListener('click', () => {
+          const mState = getCurrentMeterState();
+          const csvContent = Engine.generateCsvReport(mState, null, {
+            redactSensitive: appState.redactConsumerId
+          });
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `bill-to-savings-report-${Date.now()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('Exported formula-safe CSV report.');
+        });
+
+        document.getElementById('btnPrintPdf').addEventListener('click', () => {
+          window.print();
+        });
+      }
+
+      function handleBillFileSelection(fileMeta) {
+        const statusBox = document.getElementById('uploadStatusBox');
+        const check = Engine.validateBillUpload(fileMeta);
+        if (!check.valid) {
+          statusBox.className = 'rounded-lg p-3 text-xs border bg-rose-50 border-rose-300 text-rose-950 font-medium';
+          statusBox.innerHTML = `<strong>Upload Rejected:</strong> ${Engine.escapeHtml(check.error)}`;
+          statusBox.classList.remove('hidden');
+          showToast(check.error, 'error');
+          return;
+        }
+
+        const consentChecked = document.getElementById('chkAiConsent').checked;
+        if (!consentChecked) {
+          statusBox.className = 'rounded-lg p-3 text-xs border bg-amber-50 border-amber-300 text-amber-950 font-medium';
+          statusBox.innerHTML =
+            '<strong>Consent Required for Automated Extraction:</strong> Please check the Informed Consent box above before running bill extraction, or enter your bill fields manually on the right.';
+          statusBox.classList.remove('hidden');
+          showToast('Please check the consent box to extract fields from your uploaded file.', 'warning');
+          return;
+        }
+
+        const mState = getCurrentMeterState();
+        mState.isDemoData = false;
+        mState.bill.businessName = fileMeta.name.replace(/\.[^.]+$/, '');
+        mState.bill.fieldStatus.businessName = 'uncertain';
+        mState.bill.fieldStatus.unitsConsumedKwh = 'uncertain';
+        mState.bill.fieldStatus.totalBillAmount = 'uncertain';
+        syncActiveMeterMetadata();
+        saveState();
+        renderAll();
+
+        statusBox.className = 'rounded-lg p-3 text-xs border bg-emerald-50 border-emerald-300 text-emerald-950 font-medium';
+        statusBox.innerHTML = `<strong>File Validated (${Engine.escapeHtml(fileMeta.name)}):</strong> Local extraction complete. Please review and confirm all highlighted fields on the right before relying on estimates.`;
+        statusBox.classList.remove('hidden');
+        showToast(`Processed "${fileMeta.name}". Please review extracted fields.`);
+      }
+
+      function loadPresetProfile(presetKey) {
+        const preset = Demo.businessPresets[presetKey] || Demo.primaryDemoMeter;
+        appState.meters[appState.activeMeterIndex] = {
+          id: preset.id,
+          meterName: preset.meterName,
+          consumerNumber: preset.bill.consumerNumber,
+          billingPeriod: preset.bill.billingPeriod,
+          state: clone(preset)
+        };
+        saveState();
+        renderAll();
+      }
+
+      function clearCurrentBillForManualEntry() {
+        const mState = getCurrentMeterState();
+        mState.isDemoData = false;
+        mState.bill = {
+          provider: 'Not available',
+          consumerNumber: 'Not available',
+          businessName: '',
+          tariffCategory: 'Not available',
+          billingPeriod: '',
+          unitsConsumedKwh: 1000,
+          totalBillAmount: 9500,
+          energyCharges: 'Not available',
+          fixedCharges: 'Not available',
+          taxesAndDuties: 'Not available',
+          otherCharges: 'Not available',
+          peakConsumptionKwh: 'Not available',
+          offPeakConsumptionKwh: 'Not available',
+          fieldStatus: {
+            provider: 'missing',
+            consumerNumber: 'missing',
+            businessName: 'missing',
+            tariffCategory: 'missing',
+            billingPeriod: 'missing',
+            unitsConsumedKwh: 'verified',
+            totalBillAmount: 'verified',
+            energyCharges: 'missing',
+            fixedCharges: 'missing',
+            taxesAndDuties: 'missing',
+            otherCharges: 'missing',
+            peakConsumptionKwh: 'missing',
+            offPeakConsumptionKwh: 'missing'
+          }
+        };
+        mState.equipment = [];
+        syncActiveMeterMetadata();
+        saveState();
+        renderAll();
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        initEventListeners();
+        setMode(appState.mode || 'simple');
+        setStep(appState.activeStep || 3);
+      });
+    })();
+  </script>
+</body>
+</html>

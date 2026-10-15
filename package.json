@@ -1,0 +1,14 @@
+{
+  "name": "bill-to-savings",
+  "version": "1.0.0",
+  "description": "AI-Powered Electricity Cost Optimization Platform for Small Businesses",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test tests/calculator.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
