@@ -8,14 +8,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <script>
     if (typeof window.tailwind !== 'undefined') {
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+              sans: ['Inter', 'Noto Sans Tamil', 'system-ui', '-apple-system', 'sans-serif'],
               mono: ['JetBrains Mono', 'monospace']
             },
             colors: {
@@ -93,13 +93,40 @@
         </button>
       </div>
 
-      <!-- Quick Preset & Modal Actions -->
-      <div class="flex items-center gap-2">
+      <!-- Quick Preset, Language, Voice & AI Bot Actions -->
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <!-- Bilingual Language Switcher (EN | தமிழ்) -->
+        <div class="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700" role="group" aria-label="Language Switcher">
+          <button id="btnLangEn" type="button" class="px-2 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white transition">
+            EN
+          </button>
+          <button id="btnLangTa" type="button" class="px-2 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+            தமிழ்
+          </button>
+        </div>
+
+        <!-- Bilingual Voice Readout Button -->
+        <button id="btnVoiceSummary" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition" title="Listen to Savings Summary in English or Tamil">
+          <span>🔊</span>
+          <span id="lblVoiceSummary">Voice</span>
+        </button>
+        <button id="btnVoiceStop" type="button" class="hidden items-center gap-1 px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition" title="Stop Voice">
+          ⏹ Stop
+        </button>
+
+        <!-- AI Energy Bot Trigger Button -->
+        <button id="btnOpenAiBotHeader" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold shadow-xs transition">
+          <span>🤖</span>
+          <span id="lblAiBotBtn">AI Bot</span>
+        </button>
         <label for="presetSelect" class="sr-only">Business Preset</label>
         <select id="presetSelect" class="text-xs border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500">
-          <option value="cafe">Sample: Chennai Café (2,400 kWh)</option>
-          <option value="retail">Sample: Retail Shop (1,500 kWh)</option>
-          <option value="workshop">Sample: Workshop (3,800 kWh)</option>
+          <option value="cafe">Bill #1: Chennai Café (2,400 kWh • ₹23,400)</option>
+          <option value="retail">Bill #2: Mangadu Retail Shop (1,500 kWh • ₹14,700)</option>
+          <option value="salon">Bill #3: Anna Nagar Salon (1,150 kWh • ₹11,400)</option>
+          <option value="office">Bill #4: OMR Small Office (1,800 kWh • ₹17,700)</option>
+          <option value="workshop">Bill #5: Guindy Workshop (3,800 kWh • ₹35,400)</option>
+          <option value="supermarket">Bill #6: Ambattur Supermarket (3,100 kWh • ₹30,100)</option>
         </select>
         <button id="btnViewSampleBill" type="button" class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
           View Sample Bill
@@ -754,6 +781,65 @@
       </div>
     </div>
   </div>
+
+
+  <!-- FLOATING AI ENERGY ADVISOR BOT LAUNCHER & DRAWER (English & தமிழ் + Voice Mic) -->
+  <div class="fixed bottom-4 left-4 z-40 no-print">
+    <button id="btnFloatingAiBot" type="button" class="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white border-2 border-emerald-500 shadow-2xl transition transform hover:scale-105">
+      <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-xs">🤖</span>
+      <span id="lblFloatingBot" class="text-xs font-extrabold tracking-tight">AI Energy Advisor (EN / தமிழ்)</span>
+    </button>
+  </div>
+
+  <aside id="aiBotDrawer" class="fixed bottom-16 left-4 z-50 w-[92vw] sm:w-[400px] max-h-[80vh] bg-white rounded-2xl shadow-2xl border border-slate-300 flex flex-col hidden overflow-hidden no-print" aria-label="Bilingual AI Energy Advisor Bot">
+    <!-- Bot Header -->
+    <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-base">🤖</div>
+        <div>
+          <h3 id="aiBotTitle" class="text-xs sm:text-sm font-extrabold text-white">AI Energy Advisor • மின்சார ஆலோசகர்</h3>
+          <p id="aiBotSubtitle" class="text-[10px] text-emerald-400">Ask in English, தமிழ், or Tanglish • Voice Enabled</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <label class="flex items-center gap-1 text-[10px] bg-slate-800 px-2 py-1 rounded border border-slate-700 cursor-pointer" title="Auto-read bot replies aloud">
+          <input id="chkBotAutoSpeak" type="checkbox" checked class="h-3 w-3 rounded text-emerald-500" />
+          <span>🔊 Speak</span>
+        </label>
+        <button id="btnCloseAiBot" type="button" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">✕</button>
+      </div>
+    </div>
+
+    <!-- Quick Prompt Chips -->
+    <div id="aiBotQuickChips" class="bg-slate-50 px-3 py-2 border-b border-slate-200 flex flex-wrap gap-1.5">
+      <button type="button" data-bot-q="summary" class="bot-chip text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-medium transition">
+        📊 Savings Summary / சேமிப்பு சுருக்கம்
+      </button>
+      <button type="button" data-bot-q="zero_cost" class="bot-chip text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-medium transition">
+        ⚡ ₹0 Cost Tips / செலவில்லா வழிகள்
+      </button>
+      <button type="button" data-bot-q="tod" class="bot-chip text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-medium transition">
+        🕒 Peak vs Off-Peak / பீக் ஹவர்
+      </button>
+      <button type="button" data-bot-q="ac_tips" class="bot-chip text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-medium transition">
+        ❄️ AC &amp; Fridge / ஏசி &amp; பிரிட்ஜ்
+      </button>
+    </div>
+
+    <!-- Chat Messages Scroll Container -->
+    <div id="aiBotMessages" class="flex-1 overflow-y-auto p-3.5 space-y-2.5 bg-slate-50/50 text-xs" style="min-height: 230px; max-height: 320px;"></div>
+
+    <!-- Voice & Text Input Bar -->
+    <form id="aiBotForm" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-1.5">
+      <button id="btnBotMic" type="button" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition shrink-0" title="Speak in Tamil or English">
+        🎙️
+      </button>
+      <input id="aiBotInput" type="text" placeholder="Ask in English, தமிழ், or Tanglish..." class="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+      <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shrink-0">
+        Send
+      </button>
+    </form>
+  </aside>
 
   <!-- INLINED CORE CALCULATION ENGINE & DEMO DATASET -->
   <script>
@@ -2275,6 +2361,90 @@
       },
       equipment: []
     },
+    salon: {
+      ...JSON.parse(JSON.stringify(primaryDemoMeter)),
+      id: 'preset-salon',
+      meterName: 'Velvet Glow Unisex Salon & Spa (Fictional Salon Demo)',
+      bill: {
+        ...primaryDemoMeter.bill,
+        consumerNumber: 'DEMO-05-319-4420-S',
+        businessName: 'Velvet Glow Unisex Salon & Spa (Fictional Demo)',
+        unitsConsumedKwh: 1150,
+        energyCharges: 9775,
+        fixedCharges: 1050,
+        taxesAndDuties: 489,
+        otherCharges: 86,
+        totalBillAmount: 11400,
+        peakConsumptionKwh: 410,
+        offPeakConsumptionKwh: 110,
+        normalConsumptionKwh: 630
+      },
+      questionnaire: {
+        businessType: 'Salon',
+        operatingHours: '9–12 hours',
+        equipmentUsed: ['Air conditioner', 'Fans', 'Lighting', 'Computers', 'Other equipment'],
+        majorEquipmentFrequency: 'Most operating hours',
+        canShiftUsage: 'Maybe',
+        mainPriority: 'Reduce unnecessary energy consumption.'
+      },
+      equipment: []
+    },
+    office: {
+      ...JSON.parse(JSON.stringify(primaryDemoMeter)),
+      id: 'preset-office',
+      meterName: 'CodeWave Digital Solutions Pvt Ltd (Fictional Office Demo)',
+      bill: {
+        ...primaryDemoMeter.bill,
+        consumerNumber: 'DEMO-08-701-2910-O',
+        businessName: 'CodeWave Digital Solutions Pvt Ltd (Fictional Demo)',
+        unitsConsumedKwh: 1800,
+        energyCharges: 15300,
+        fixedCharges: 1500,
+        taxesAndDuties: 765,
+        otherCharges: 135,
+        totalBillAmount: 17700,
+        peakConsumptionKwh: 450,
+        offPeakConsumptionKwh: 270,
+        normalConsumptionKwh: 1080
+      },
+      questionnaire: {
+        businessType: 'Small office',
+        operatingHours: '9–12 hours',
+        equipmentUsed: ['Air conditioner', 'Refrigerator or freezer', 'Fans', 'Lighting', 'Computers'],
+        majorEquipmentFrequency: 'Most operating hours',
+        canShiftUsage: 'No',
+        mainPriority: 'Reduce my monthly bill.'
+      },
+      equipment: []
+    },
+    supermarket: {
+      ...JSON.parse(JSON.stringify(primaryDemoMeter)),
+      id: 'preset-supermarket',
+      meterName: 'Annapoorna Fresh Mart & Cold Storage (Fictional Supermarket Demo)',
+      bill: {
+        ...primaryDemoMeter.bill,
+        consumerNumber: 'DEMO-11-890-6612-M',
+        businessName: 'Annapoorna Fresh Mart & Cold Storage (Fictional Demo)',
+        unitsConsumedKwh: 3100,
+        energyCharges: 26350,
+        fixedCharges: 2250,
+        taxesAndDuties: 1318,
+        otherCharges: 182,
+        totalBillAmount: 30100,
+        peakConsumptionKwh: 850,
+        offPeakConsumptionKwh: 950,
+        normalConsumptionKwh: 1300
+      },
+      questionnaire: {
+        businessType: 'Other',
+        operatingHours: 'More than 12 hours',
+        equipmentUsed: ['Air conditioner', 'Refrigerator or freezer', 'Fans', 'Lighting', 'Computers', 'Motors or pumps'],
+        majorEquipmentFrequency: 'Almost continuously',
+        canShiftUsage: 'Yes',
+        mainPriority: 'Reduce my monthly bill.'
+      },
+      equipment: []
+    },
     workshop: {
       ...JSON.parse(JSON.stringify(primaryDemoMeter)),
       id: 'preset-workshop',
@@ -2432,6 +2602,331 @@
 
       let scenarioChartInstance = null;
       let categoryChartInstance = null;
+
+
+      // ==========================================================
+      // BILINGUAL TAMIL (தமிழ்) & ENGLISH I18N + VOICE + AI BOT
+      // ==========================================================
+      const TAMIL_REC_TRANSLATIONS = {
+        'ac-setpoint-schedule': {
+          title: 'ஏசி (AC) வெப்பநிலையை 24°C–25°C ஆக வைத்தல் மற்றும் நேரக் கட்டுப்பாடு',
+          why: 'உங்கள் வணிகத்தில் ஏசி பயன்பாடு அதிகமாக உள்ளது. வெப்பநிலையை 18°C-க்கு பதில் 24°C–25°C-ல் வைப்பதன் மூலம் ஒவ்வொரு டிகிரிக்கும் 6% வரை மின்சாரம் சேமிக்கலாம்.',
+          what: 'ஏசி தெர்மோஸ்டாட்டை 24°C–25°C-ல் வைக்கவும், சீலிங் ஃபேன்களைப் பயன்படுத்தவும், கடையை மூடுவதற்கு 30 நிமிடங்களுக்கு முன்பே ஏசியை அணைக்கவும்.'
+        },
+        'ac-filter-coil-maintenance': {
+          title: 'இரு வாரங்களுக்கு ஒருமுறை ஏசி ஃபில்டர் மற்றும் காயில் சுத்தம் செய்தல்',
+          why: 'தூசி படிந்த ஏசி ஃபில்டர்கள் மற்றும் கண்டென்சர் காயில்கள் கம்ப்ரசரை அதிக நேரம் ஓடச் செய்து மின்சாரத்தை வீணாக்குகின்றன.',
+          what: 'உட்புற மெஷ் ஃபில்டர்களை 2 வாரங்களுக்கு ஒருமுறை தண்ணீரில் கழுவவும்; கோடைக்கு முன் காயில்களை சர்வீஸ் செய்யவும்.'
+        },
+        'led-lighting-upgrade': {
+          title: 'பழைய டியூப் லைட்களுக்கு பதில் அதிக திறன் கொண்ட LED விளக்குகளைப் பொருத்துதல்',
+          why: 'உங்கள் நிறுவனத்தில் விளக்குகள் தினமும் நீண்ட நேரம் எரிகின்றன. பழைய 36W/40W டியூப் லைட்களை மாற்றுவது உடனடி மின் சேமிப்பைத் தரும்.',
+          what: 'BIS சான்றளிக்கப்பட்ட 18W–20W LED விளக்குகளைப் பொருத்தவும் மற்றும் தனித்தனி சுவிட்ச்โซன்களைப் பயன்படுத்தவும்.'
+        },
+        'refrigeration-gasket-coil-care': {
+          title: 'குளிர்சாதனப் பெட்டி (Fridge/Freezer) கதவு சீல் மற்றும் காயில் பராமரிப்பு',
+          why: 'வணிக ரீதியான பிரிட்ஜ் மற்றும் பிரீசர்கள் 24 மணி நேரமும் இயங்குவதால் அடிப்படை மின் நுகர்வில் முக்கியப் பங்கு வகிக்கின்றன.',
+          what: 'பின்புற கண்டென்சர் காயில்களை சுத்தம் செய்யவும், சுவரில் இருந்து 10 செ.மீ இடைவெளி விடவும், ரப்பர் கேஸ்கெட்டை சரிபார்க்கவும்.'
+        },
+        'standby-and-unused-switch-off': {
+          title: 'ஸ்டாண்ட்பை (Standby) மின் விரயத்தைத் தவிர்த்தல் & கடையை மூடும்போது மெயின் சுவிட்ச் ஆஃப் செய்தல்',
+          why: 'பெயர்ப் பலகைகள், வாட்டர் டிஸ்பென்சர், பிஓஎஸ் (POS) கணினிகள் மற்றும் சார்ஜர்கள் பயன்பாட்டில் இல்லாதபோதும் மின்சாரத்தை ஈர்க்கின்றன.',
+          what: 'அவசியமில்லாத கருவிகளுக்கு மாஸ்டர் பவர் ஸ்ட்ரிப்களைப் பயன்படுத்தவும்; பணி முடிந்ததும் அணைக்க சரிபார்ப்புப் பட்டியலைப் பின்பற்றவும்.'
+        },
+        'operating-schedule-optimization': {
+          title: 'இயந்திரங்களைத் தொடங்குவதை முறைப்படுத்துதல் & தேவையற்ற இயக்க நேரத்தைக் குறைத்தல்',
+          why: 'கடை திறந்தவுடன் அனைத்து பெரிய இயந்திரங்களையும் ஒரே நேரத்தில் இயக்குவது மின் கட்டணத்தை அதிகரிக்கிறது.',
+          what: 'வாடிக்கையாளர் வருகை அல்லது உற்பத்தி தொடங்கும் போது மட்டும் ஏசி மற்றும் பெரிய மோட்டார்களை இயக்கவும்.'
+        },
+        'motor-pump-preventive-efficiency': {
+          title: 'மோட்டார்கள், பம்புகள் மற்றும் கம்ப்ரசர்களுக்கான தடுப்பு பராமரிப்பு',
+          why: 'மோட்டார்கள் மற்றும் பம்புகள் உங்கள் மாதாந்திர மின் பயன்பாட்டில் குறிப்பிடத்தக்க பங்கைக் கொண்டுள்ளன.',
+          what: 'காற்று/நீர் கசிவுகளை சரிசெய்யவும், பெல்ட் மற்றும் லூப்ரிகேஷனை சரிபார்க்கவும், பயன்பாடு இல்லாதபோது மோட்டாரை அணைக்கவும்.'
+        },
+        'computing-power-management': {
+          title: 'கணினிகள் மற்றும் அலுவலகக் கருவிகளில் ஆட்டோமேட்டிக் ஸ்லீப் மோடு (Sleep Mode)',
+          why: 'கணினிகள், மானிட்டர்கள் மற்றும் பிரிண்டர்கள் இடைவேளையின் போதும் தொடர்ந்து இயங்குவதால் மின்சாரம் வீணாகிறது.',
+          what: '10 நிமிடங்கள் பயன்படுத்தாவிட்டால் மானிட்டர் ஸ்லீப் மோடுக்குச் செல்லுமாறு அமைக்கவும்; இரவில் பிரிண்டர்களை அணைக்கவும்.'
+        },
+        'monthly-submeter-anomaly-tracking': {
+          title: 'வாராந்திர மீட்டர் ரீடிங் கண்காணிப்பு மற்றும் திடீர் மின் உயர்வு ஆய்வு',
+          why: 'வாரந்தோறும் திங்கட்கிழமை மீட்டர் ரீடிங்கைப் பதிவு செய்வது, பில் வருவதற்கு முன்பே பழுதுகளைக் கண்டறிய உதவும்.',
+          what: 'ஒவ்வொரு வாரமும் உங்கள் மின் மீட்டர் kWh அளவை புகைப்படம் எடுத்து ஒப்பிடவும்.'
+        },
+        'tod-load-shifting': {
+          title: 'பீக் ஹவர் (Peak Hours) மின் பயன்பாட்டை ஆஃப்-பீக் (Off-Peak) நேரத்திற்கு மாற்றுதல்',
+          why: 'உங்கள் கட்டண முறையில் பீக் நேரத்தை விட சாதாரண/இரவு நேரங்களில் யூனிட் கட்டணம் குறைவாக உள்ளது.',
+          what: 'நீர் சூடாக்குதல், மாவு அரைத்தல், பம்பிங் மற்றும் சார்ஜிங் போன்ற பணிகளை காலை 6–10 மற்றும் மாலை 6–10 மணிக்கு வெளியே மாற்றவும் (இது kWh அளவைக் குறைக்காது, ஆனால் கட்டணத்தைக் குறைக்கும்).'
+        }
+      };
+
+      const UI_TRANSLATIONS = {
+        ta: {
+          subtitle: 'மின்சார பில்களை நடைமுறை சேமிப்பாக மாற்றும் தளம்',
+          simpleMode: 'எளிய முறை (Simple)',
+          advancedMode: 'மேம்பட்ட முறை (Advanced)',
+          viewSampleBill: 'மாதிரி பில்',
+          resetDemo: 'மீட்டமை (Reset)',
+          missionQuote: '“உங்கள் மின் கட்டணப் பில் நீங்கள் எவ்வளவு செலுத்தினீர்கள் என்பதைக் கூறுகிறது. Bill-to-Savings நீங்கள் எவ்வளவு சேமிக்கலாம் என்பதைக் கண்டறிய உதவுகிறது.”',
+          tryDemo: 'டெமோவை முயற்சிக்கவும்',
+          analyzeBill: 'பில்லை ஆய்வு செய்',
+          manualEntry: 'கைமுறையாக உள்ளிடுக',
+          tab3: 'சேமிப்பு டாஷ்போர்டு & திட்டம்',
+          tab1: 'பில் பதிவேற்றம் & சரிபார்ப்பு',
+          tab2: '6-கேள்வி வணிக விவரம்',
+          tab4: 'வாட்-இஃப் சிமுலேட்டர் & ToD',
+          tab5: 'பல மீட்டர்கள் (Meters)',
+          tab6: 'ஆடிட் அறிக்கை & பதிவிறக்கம்',
+          noticeText: 'கற்பனையான டெமோ தரவு — அதிகாரப்பூர்வ மின் கட்டணப் பில் அல்ல. இதில் உள்ள கட்டண விகிதங்கள் மாற்றக்கூடிய மாதிரி அனுமானங்கள் ஆகும் (TANGEDCO/TNPDCL அதிகாரப்பூர்வ விகிதங்கள் அல்ல).',
+          q1: '1. நீங்கள் எந்த வகையான வணிகத்தை நடத்துகிறீர்கள்?',
+          q2: '2. உங்கள் வழக்கமான பணி நேரம் எவ்வளவு?',
+          q3: '3. நீங்கள் பொதுவாகப் பயன்படுத்தும் மின் சாதனங்கள் யாவை? (பொருந்தும் அனைத்தையும் தேர்வு செய்க)',
+          q4: '4. ஏசி (AC) அல்லது முக்கிய மின் சாதனங்களை எவ்வளவு அடிக்கடி பயன்படுத்துகிறீர்கள்?',
+          q5: '5. சில மின் பயன்பாடுகளை மற்ற நேரத்திற்கு (Off-Peak) மாற்ற முடியுமா?',
+          q6: '6. உங்கள் முக்கிய முன்னுரிமை என்ன?',
+          voiceBtn: 'தமிழில் கேள்'
+        },
+        en: {
+          subtitle: 'Turn electricity bills into actionable savings',
+          simpleMode: 'Simple Mode',
+          advancedMode: 'Advanced Mode',
+          viewSampleBill: 'View Sample Bill',
+          resetDemo: 'Reset Demo',
+          missionQuote: '“Your electricity bill tells you what you paid. Bill-to-Savings helps you discover what you could save.”',
+          tryDemo: 'Try Demo (Instant Report)',
+          analyzeBill: 'Analyze a Bill',
+          manualEntry: 'Enter Bill Manually',
+          tab3: 'Savings Dashboard & Plan',
+          tab1: 'Bill Upload & Review',
+          tab2: '6-Question Profile',
+          tab4: 'What-If Simulator & ToD',
+          tab5: 'Multiple Meters',
+          tab6: 'Audit Report & Export',
+          noticeText: 'Fictional demo data — not an official electricity bill. Tariff rates and emissions factors shown are editable demo assumptions, not official TANGEDCO/TNPDCL rates.',
+          q1: '1. What type of business do you operate?',
+          q2: '2. What are your usual operating hours?',
+          q3: '3. Which equipment do you commonly use? (Select all that apply)',
+          q4: '4. How often do you use air conditioning or other major electrical equipment?',
+          q5: '5. Can you shift some electricity usage to another time of day?',
+          q6: '6. What is your main priority?',
+          voiceBtn: 'Voice'
+        }
+      };
+
+      function getLang() {
+        return appState.lang === 'ta' ? 'ta' : 'en';
+      }
+
+      function setLanguage(lang) {
+        appState.lang = lang === 'ta' ? 'ta' : 'en';
+        const isTa = appState.lang === 'ta';
+        const dict = UI_TRANSLATIONS[appState.lang];
+
+        const btnEn = document.getElementById('btnLangEn');
+        const btnTa = document.getElementById('btnLangTa');
+        if (btnEn && btnTa) {
+          btnEn.className = !isTa
+            ? 'px-2 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white transition'
+            : 'px-2 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
+          btnTa.className = isTa
+            ? 'px-2 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white transition'
+            : 'px-2 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
+        }
+
+        const lblVoice = document.getElementById('lblVoiceSummary');
+        if (lblVoice) lblVoice.textContent = dict.voiceBtn;
+
+        const btnSimple = document.getElementById('btnModeSimple');
+        const btnAdv = document.getElementById('btnModeAdvanced');
+        if (btnSimple) btnSimple.textContent = dict.simpleMode;
+        if (btnAdv) btnAdv.textContent = dict.advancedMode;
+
+        const btnSample = document.getElementById('btnViewSampleBill');
+        const btnReset = document.getElementById('btnResetDemoPrompt');
+        if (btnSample) btnSample.textContent = dict.viewSampleBill;
+        if (btnReset) btnReset.textContent = dict.resetDemo;
+
+        const btnTry = document.getElementById('heroBtnTryDemo');
+        const btnAn = document.getElementById('heroBtnAnalyzeBill');
+        const btnMan = document.getElementById('heroBtnManualEntry');
+        if (btnTry) btnTry.textContent = dict.tryDemo;
+        if (btnAn) btnAn.textContent = dict.analyzeBill;
+        if (btnMan) btnMan.textContent = dict.manualEntry;
+
+        const noticeEl = document.getElementById('globalNoticeText');
+        if (noticeEl) noticeEl.textContent = dict.noticeText;
+
+        // Translate questionnaire labels
+        const qLabels = [
+          ['label[for="qBusinessType"]', dict.q1],
+          ['label[for="qOperatingHours"]', dict.q2],
+          ['label[for="qMajorFreq"]', dict.q4],
+          ['label[for="qCanShift"]', dict.q5],
+          ['label[for="qMainPriority"]', dict.q6]
+        ];
+        qLabels.forEach(([sel, txt]) => {
+          const el = document.querySelector(sel);
+          if (el) el.textContent = txt;
+        });
+
+        // Update workflow tab labels
+        const tabMap = { 3: dict.tab3, 1: dict.tab1, 2: dict.tab2, 4: dict.tab4, 6: dict.tab6 };
+        document.querySelectorAll('.workflow-tab').forEach((btn) => {
+          const st = Number(btn.getAttribute('data-step'));
+          const spans = btn.querySelectorAll('span');
+          if (spans.length >= 2 && tabMap[st]) {
+            spans[1].textContent = tabMap[st];
+          }
+        });
+
+        saveState();
+        renderAll();
+      }
+
+      // Web Speech API Text-to-Speech (Supports Tamil ta-IN & English en-IN)
+      function speakText(text, langCode) {
+        if (!('speechSynthesis' in window)) {
+          showToast('Speech synthesis is not supported in this browser.', 'warning');
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        const targetLang = langCode || (getLang() === 'ta' ? 'ta-IN' : 'en-IN');
+        utter.lang = targetLang;
+        utter.rate = 0.98;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          const exactVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(targetLang.slice(0, 2).toLowerCase()));
+          if (exactVoice) utter.voice = exactVoice;
+        }
+
+        const stopBtn = document.getElementById('btnVoiceStop');
+        utter.onstart = () => {
+          if (stopBtn) {
+            stopBtn.classList.remove('hidden');
+            stopBtn.classList.add('inline-flex');
+          }
+        };
+        utter.onend = () => {
+          if (stopBtn) {
+            stopBtn.classList.add('hidden');
+            stopBtn.classList.remove('inline-flex');
+          }
+        };
+        utter.onerror = () => {
+          if (stopBtn) {
+            stopBtn.classList.add('hidden');
+            stopBtn.classList.remove('inline-flex');
+          }
+        };
+
+        window.speechSynthesis.speak(utter);
+        showToast(targetLang.startsWith('ta') ? '🔊 தமிழில் சுருக்கம் வாசிக்கப்படுகிறது...' : '🔊 Reading savings summary aloud...');
+      }
+
+      function buildVoiceSummaryText(plan) {
+        const s = plan.summary;
+        const mState = getCurrentMeterState();
+        const bName = mState.bill.businessName || 'your business';
+        const topRec = s.highestPriorityAction;
+        if (getLang() === 'ta') {
+          const topTa = topRec && TAMIL_REC_TRANSLATIONS[topRec.id] ? TAMIL_REC_TRANSLATIONS[topRec.id].title : (topRec ? topRec.title : '');
+          return `வணக்கம்! ${bName} மின் கட்டண ஆய்வு சுருக்கம்: உங்கள் தற்போதைய மாத மின் கட்டணம் ரூபாய் ${s.totalBillAmount}. மொத்த மின் பயன்பாடு ${s.totalBilledKwh} யூனிட்கள். எமது பரிந்துரைகள் மூலம் மாதம் சுமார் ரூபாய் ${s.estimatedMonthlySavingsInr} மற்றும் வருடத்திற்கு ரூபாய் ${s.estimatedAnnualSavingsInr} வரை சேமிக்க வாய்ப்புள்ளது. உங்கள் முதல் முக்கிய நடவடிக்கை: ${topTa}.`;
+        }
+        return `Hello! Here is the Bill-to-Savings summary for ${bName}. Your current monthly bill is ${s.totalBillAmount} rupees for ${s.totalBilledKwh} kilowatt hours. Your estimated monthly savings opportunity is ${s.estimatedMonthlySavingsInr} rupees per month, or ${s.estimatedAnnualSavingsInr} rupees annualized per year, with a simple payback of ${s.portfolioPaybackLabel}. Your number one recommended action is: ${topRec ? topRec.title : 'optimize equipment schedules'}.`;
+      }
+
+      // Bilingual AI Energy Advisor Bot Response Engine
+      function generateAiBotResponse(userText) {
+        const mState = getCurrentMeterState();
+        const plan = Engine.generateSavingsPlan(mState);
+        const s = plan.summary;
+        const tod = plan.todAnalysis;
+        const q = String(userText || '').toLowerCase();
+        const isTaQuery = getLang() === 'ta' || /[\u0B80-\u0BFF]/.test(userText) || /epdi|enna|kammi|bill|kuraippathu|vanakkam|sollu/.test(q);
+
+        const zeroCostActions = plan.recommendations.filter((r) => r.implementationCostInr === 0 && r.monthlySavingsInr > 0);
+        const topAction = s.highestPriorityAction || plan.recommendations[0];
+        const topTa = topAction && TAMIL_REC_TRANSLATIONS[topAction.id] ? TAMIL_REC_TRANSLATIONS[topAction.id] : null;
+
+        if (q.includes('zero_cost') || q.includes('₹0') || q.includes('free') || q.includes('low cost') || q.includes('செலவில்லா') || q.includes('selavilla')) {
+          if (isTaQuery) {
+            const listTa = zeroCostActions.map((r) => `• ${(TAMIL_REC_TRANSLATIONS[r.id] && TAMIL_REC_TRANSLATIONS[r.id].title) || r.title} (மாதம் ~₹${r.monthlySavingsInr} சேமிப்பு)`).join('<br>');
+            return {
+              lang: 'ta-IN',
+              html: `<strong>⚡ ₹0 முதலீட்டில் உடனடியாகச் செய்யக்கூடிய மாற்றங்கள்:</strong><br>${listTa || 'ஏசி வெப்பநிலையை 24°C-ல் வைத்தல் மற்றும் தேவையற்ற நேரங்களில் மின் சாதனங்களை அணைத்தல்.'}`,
+              speech: `பூஜ்ஜிய முதலீட்டில் உடனடியாகச் செய்யக்கூடிய மாற்றங்கள் மூலம் மாதம் ரூபாய் ${zeroCostActions.reduce((a, r) => a + r.monthlySavingsInr, 0)} வரை சேமிக்கலாம்.`
+            };
+          }
+          const listEn = zeroCostActions.map((r) => `• <strong>${Engine.escapeHtml(r.title)}</strong> (Saves ~₹${r.monthlySavingsInr}/mo)`).join('<br>');
+          return {
+            lang: 'en-IN',
+            html: `<strong>⚡ Top ₹0 Upfront Cost Actions for Your Facility:</strong><br>${listEn || 'Optimize AC setpoint to 24°C and trim idle operating hours.'}`,
+            speech: `You have ${zeroCostActions.length} zero-cost actions that can save ${zeroCostActions.reduce((a, r) => a + r.monthlySavingsInr, 0)} rupees per month with immediate payback.`
+          };
+        }
+
+        if (q.includes('tod') || q.includes('peak') || q.includes('shift') || q.includes('பீக்') || q.includes('நேரம்')) {
+          if (isTaQuery) {
+            return {
+              lang: 'ta-IN',
+              html: `<strong>🕒 பீக் ஹவர் (Time-of-Day) மின் மாற்றம்:</strong><br>உங்கள் பீக் நேரப் பயன்பாடு சுமார் <strong>${tod.estimatedPeakKwh} kWh/மாதம்</strong>. இதில் <strong>${tod.shiftableKwh} kWh</strong> பயன்பாட்டை சாதாரண/இரவு நேரத்திற்கு மாற்றினால் மாதம் <strong>₹${tod.estimatedMonthlyBillSavings}</strong> சேமிக்கலாம் (மொத்த யூனிட் குறையாமல் கட்டணம் மட்டும் குறையும்).`,
+              speech: `பீக் நேரத்தில் இயங்கும் ${tod.shiftableKwh} யூனிட்களை சாதாரண நேரத்திற்கு மாற்றினால் மாதம் ரூபாய் ${tod.estimatedMonthlyBillSavings} சேமிக்கலாம்.`
+            };
+          }
+          return {
+            lang: 'en-IN',
+            html: `<strong>🕒 Time-of-Day (ToD) Peak Load Shifting:</strong><br>${Engine.escapeHtml(tod.explanation)}<br><em>Note: Load shifting changes timing and counts as 0 kWh energy reduction.</em>`,
+            speech: tod.explanation
+          };
+        }
+
+        if (q.includes('ac') || q.includes('fridge') || q.includes('cooling') || q.includes('ஏசி') || q.includes('பிரிட்ஜ்')) {
+          if (isTaQuery) {
+            return {
+              lang: 'ta-IN',
+              html: `<strong>❄️ ஏசி &amp; பிரிட்ஜ் மின் சேமிப்பு வழிகள்:</strong><br>1. <strong>ஏசி 24°C–25°C:</strong> 18°C-க்கு பதில் 24°C-ல் வைத்தால் மாதம் ~₹884 வரை சேமிக்கலாம்.<br>2. <strong>ஃபில்டர் சுத்தம்:</strong> 2 வாரங்களுக்கு ஒருமுறை ஏசி ஃபில்டரைக் கழுவவும்.<br>3. <strong>பிரிட்ஜ் பராமரிப்பு:</strong> கதவு ரப்பர் சீல் மற்றும் பின்புற காயிலை சுத்தமாக வைத்தால் 12% வரை மின்சாரம் மிச்சமாகும்.`,
+              speech: `ஏசியை 24 டிகிரியில் வைத்து சீலிங் ஃபேனைப் பயன்படுத்தினால் கம்ப்ரசர் மின் நுகர்வு கணிசமாகக் குறையும்.`
+            };
+          }
+          return {
+            lang: 'en-IN',
+            html: `<strong>❄️ Cooling &amp; Refrigeration Optimization:</strong><br>• Set split ACs to <strong>24°C–25°C</strong> with ceiling fans on.<br>• Wash indoor AC mesh filters every 2 weeks.<br>• Keep 10 cm clearance behind commercial refrigerators and check door gaskets quarterly.`,
+            speech: `Setting your air conditioning to 24 or 25 degrees Celsius and cleaning filters bi-weekly is your fastest cooling cost reduction.`
+          };
+        }
+
+        // Default comprehensive summary response
+        if (isTaQuery) {
+          return {
+            lang: 'ta-IN',
+            html: `<strong>📊 உங்கள் மின் கட்டண சேமிப்பு அறிக்கை (${Engine.escapeHtml(mState.bill.businessName || 'வணிகம்')}):</strong><br>• தற்போதைய பில்: <strong>₹${s.totalBillAmount.toLocaleString('en-IN')}</strong> (${s.totalBilledKwh} kWh)<br>• மாத சேமிப்பு வாய்ப்பு: <strong>₹${s.estimatedMonthlySavingsInr.toLocaleString('en-IN')}/மாதம்</strong> (ஆண்டுக்கு ~₹${s.estimatedAnnualSavingsInr.toLocaleString('en-IN')})<br>• <strong>முதல் நடவடிக்கை (#1):</strong> ${topTa ? topTa.title : Engine.escapeHtml(topAction.title)} (மாதம் ₹${topAction.monthlySavingsInr} சேமிப்பு).`,
+            speech: buildVoiceSummaryText(plan)
+          };
+        }
+
+        return {
+          lang: 'en-IN',
+          html: `<strong>📊 Live Savings Analysis (${Engine.escapeHtml(mState.bill.businessName || 'Facility')}):</strong><br>• Current Bill: <strong>₹${s.totalBillAmount.toLocaleString('en-IN')}</strong> (${s.totalBilledKwh} kWh @ ₹${(s.effectiveRatePerKwh || 0).toFixed(2)}/kWh eff.)<br>• Est. Savings: <strong>₹${s.estimatedMonthlySavingsInr.toLocaleString('en-IN')}/mo</strong> (₹${s.estimatedAnnualSavingsInr.toLocaleString('en-IN')}/yr)<br>• <strong>#1 Priority Action:</strong> ${Engine.escapeHtml(topAction ? topAction.title : '')} (Saves ~₹${topAction ? topAction.monthlySavingsInr : 0}/mo).`,
+          speech: buildVoiceSummaryText(plan)
+        };
+      }
+
+      function appendBotMessage(sender, htmlText) {
+        const container = document.getElementById('aiBotMessages');
+        if (!container) return;
+        const msgDiv = document.createElement('div');
+        if (sender === 'user') {
+          msgDiv.className = 'ml-8 p-2.5 rounded-xl bg-emerald-600 text-white text-xs font-medium shadow-xs';
+          msgDiv.textContent = htmlText;
+        } else {
+          msgDiv.className = 'mr-4 p-3 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs leading-relaxed shadow-xs space-y-1';
+          msgDiv.innerHTML = htmlText;
+        }
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+      }
 
       function setStep(stepNumber) {
         appState.activeStep = Number(stepNumber);
@@ -2892,7 +3387,16 @@
                       <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium">Confidence: ${Engine.escapeHtml(rec.confidence)}</span>
                       ${excludedNotice}
                     </div>
-                    <h3 class="text-sm sm:text-base font-bold text-slate-900 pt-0.5">${Engine.escapeHtml(rec.title)}</h3>
+                    <div class="flex items-center gap-2 pt-0.5">
+                      <h3 class="text-sm sm:text-base font-bold text-slate-900">${
+                        getLang() === 'ta' && TAMIL_REC_TRANSLATIONS[rec.id]
+                          ? Engine.escapeHtml(TAMIL_REC_TRANSLATIONS[rec.id].title)
+                          : Engine.escapeHtml(rec.title)
+                      }</h3>
+                      <button type="button" data-speak-rec="${rec.id}" class="speak-rec-btn px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold shrink-0" title="Listen to this recommendation">
+                        🔊
+                      </button>
+                    </div>
                   </div>
 
                   <div class="text-right shrink-0 bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-1.5">
@@ -2904,12 +3408,20 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2.5 text-xs">
                   <div>
-                    <strong class="text-slate-800 block">Why this applies to your business:</strong>
-                    <p class="text-slate-600 leading-relaxed mt-0.5">${Engine.escapeHtml(rec.whyItApplies)}</p>
+                    <strong class="text-slate-800 block">${getLang() === 'ta' ? 'இது உங்கள் வணிகத்திற்கு ஏன் பொருந்தும்:' : 'Why this applies to your business:'}</strong>
+                    <p class="text-slate-600 leading-relaxed mt-0.5">${
+                      getLang() === 'ta' && TAMIL_REC_TRANSLATIONS[rec.id]
+                        ? Engine.escapeHtml(TAMIL_REC_TRANSLATIONS[rec.id].why)
+                        : Engine.escapeHtml(rec.whyItApplies)
+                    }</p>
                   </div>
                   <div>
-                    <strong class="text-slate-800 block">What you should do:</strong>
-                    <p class="text-slate-600 leading-relaxed mt-0.5">${Engine.escapeHtml(rec.whatToDo)}</p>
+                    <strong class="text-slate-800 block">${getLang() === 'ta' ? 'நீங்கள் செய்ய வேண்டியவை:' : 'What you should do:'}</strong>
+                    <p class="text-slate-600 leading-relaxed mt-0.5">${
+                      getLang() === 'ta' && TAMIL_REC_TRANSLATIONS[rec.id]
+                        ? Engine.escapeHtml(TAMIL_REC_TRANSLATIONS[rec.id].what)
+                        : Engine.escapeHtml(rec.whatToDo)
+                    }</p>
                   </div>
                 </div>
 
@@ -2940,6 +3452,20 @@
               </div>
             `;
           }).join('');
+
+          recContainer.querySelectorAll('.speak-rec-btn').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              const rId = e.currentTarget.getAttribute('data-speak-rec');
+              const found = plan.recommendations.find((r) => r.id === rId);
+              if (!found) return;
+              if (getLang() === 'ta' && TAMIL_REC_TRANSLATIONS[rId]) {
+                const t = TAMIL_REC_TRANSLATIONS[rId];
+                speakText(`${t.title}. ${t.why} ${t.what} மாத சேமிப்பு சுமார் ரூபாய் ${found.monthlySavingsInr}.`, 'ta-IN');
+              } else {
+                speakText(`${found.title}. ${found.whyItApplies} ${found.whatToDo} Estimated savings: ${found.monthlySavingsInr} rupees per month.`, 'en-IN');
+              }
+            });
+          });
 
           recContainer.querySelectorAll('.rec-assumption-input').forEach((inp) => {
             inp.addEventListener('change', (e) => {
@@ -3724,6 +4250,117 @@
         document.getElementById('btnPrintPdf').addEventListener('click', () => {
           window.print();
         });
+
+        // Language Switcher Listeners
+        const btnLangEn = document.getElementById('btnLangEn');
+        const btnLangTa = document.getElementById('btnLangTa');
+        if (btnLangEn) btnLangEn.addEventListener('click', () => {
+          setLanguage('en');
+          showToast('Switched language to English.');
+        });
+        if (btnLangTa) btnLangTa.addEventListener('click', () => {
+          setLanguage('ta');
+          showToast('மொழி தமிழுக்கு மாற்றப்பட்டது (Switched to Tamil).');
+        });
+
+        // Voice Summary & Stop Listeners
+        const btnVoiceSum = document.getElementById('btnVoiceSummary');
+        const btnVoiceStop = document.getElementById('btnVoiceStop');
+        if (btnVoiceSum) {
+          btnVoiceSum.addEventListener('click', () => {
+            const plan = Engine.generateSavingsPlan(getCurrentMeterState());
+            const text = buildVoiceSummaryText(plan);
+            speakText(text, getLang() === 'ta' ? 'ta-IN' : 'en-IN');
+          });
+        }
+        if (btnVoiceStop) {
+          btnVoiceStop.addEventListener('click', () => {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            btnVoiceStop.classList.add('hidden');
+            btnVoiceStop.classList.remove('inline-flex');
+            showToast('Stopped voice narration.');
+          });
+        }
+
+        // AI Bot Drawer Listeners
+        const botDrawer = document.getElementById('aiBotDrawer');
+        const openBot = () => {
+          if (!botDrawer) return;
+          botDrawer.classList.remove('hidden');
+          const msgBox = document.getElementById('aiBotMessages');
+          if (msgBox && msgBox.children.length === 0) {
+            const welcome = getLang() === 'ta'
+              ? '<strong>வணக்கம்! 🙏 நான் உங்கள் AI மின்சார சேமிப்பு ஆலோசகர்.</strong><br>உங்கள் மின் கட்டணத்தைக் குறைப்பது, ஏசி/பிரிட்ஜ் பராமரிப்பு, அல்லது பீக் ஹவர் சேமிப்பு பற்றி தமிழ் அல்லது ஆங்கிலத்தில் கேளுங்கள்!'
+              : '<strong>Vanakkam! 🙏 I am your Bilingual AI Energy Advisor.</strong><br>Ask me anything in <strong>English</strong>, <strong>தமிழ்</strong>, or <strong>Tanglish</strong> about reducing your electricity bill, ₹0 cost actions, or Time-of-Day load shifting!';
+            appendBotMessage('bot', welcome);
+          }
+        };
+        const btnOpenHeader = document.getElementById('btnOpenAiBotHeader');
+        const btnFloatingBot = document.getElementById('btnFloatingAiBot');
+        const btnCloseBot = document.getElementById('btnCloseAiBot');
+        if (btnOpenHeader) btnOpenHeader.addEventListener('click', openBot);
+        if (btnFloatingBot) btnFloatingBot.addEventListener('click', openBot);
+        if (btnCloseBot) btnCloseBot.addEventListener('click', () => botDrawer.classList.add('hidden'));
+
+        document.querySelectorAll('.bot-chip').forEach((chip) => {
+          chip.addEventListener('click', () => {
+            const qType = chip.getAttribute('data-bot-q');
+            appendBotMessage('user', chip.textContent.trim());
+            const reply = generateAiBotResponse(qType);
+            appendBotMessage('bot', reply.html);
+            const autoSpeak = document.getElementById('chkBotAutoSpeak');
+            if (autoSpeak && autoSpeak.checked) speakText(reply.speech, reply.lang);
+          });
+        });
+
+        const botForm = document.getElementById('aiBotForm');
+        const botInput = document.getElementById('aiBotInput');
+        if (botForm && botInput) {
+          botForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const q = botInput.value.trim();
+            if (!q) return;
+            appendBotMessage('user', q);
+            botInput.value = '';
+            const reply = generateAiBotResponse(q);
+            appendBotMessage('bot', reply.html);
+            const autoSpeak = document.getElementById('chkBotAutoSpeak');
+            if (autoSpeak && autoSpeak.checked) speakText(reply.speech, reply.lang);
+          });
+        }
+
+        // Speech-to-Text (Voice Mic Input in Tamil & English)
+        const btnBotMic = document.getElementById('btnBotMic');
+        if (btnBotMic) {
+          btnBotMic.addEventListener('click', () => {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) {
+              showToast('Voice microphone input requires Chrome/Edge SpeechRecognition support.', 'warning');
+              return;
+            }
+            const rec = new SpeechRec();
+            rec.lang = getLang() === 'ta' ? 'ta-IN' : 'en-IN';
+            rec.interimResults = false;
+            btnBotMic.textContent = '🔴';
+            showToast(getLang() === 'ta' ? '🎙️ தமிழில் பேசுங்கள்...' : '🎙️ Listening... Speak in English or Tamil.');
+            rec.onresult = (event) => {
+              const transcript = event.results[0][0].transcript;
+              if (botInput) botInput.value = transcript;
+              appendBotMessage('user', '🎙️ ' + transcript);
+              const reply = generateAiBotResponse(transcript);
+              appendBotMessage('bot', reply.html);
+              const autoSpeak = document.getElementById('chkBotAutoSpeak');
+              if (autoSpeak && autoSpeak.checked) speakText(reply.speech, reply.lang);
+            };
+            rec.onend = () => { btnBotMic.textContent = '🎙️'; };
+            rec.onerror = () => {
+              btnBotMic.textContent = '🎙️';
+              showToast('Could not capture microphone audio. Try typing or check mic permissions.', 'warning');
+            };
+            rec.start();
+          });
+        }
+
       }
 
       function handleBillFileSelection(fileMeta) {
@@ -3747,9 +4384,16 @@
           return;
         }
 
+        const lowerFile = String(fileMeta.name).toLowerCase();
+        const matchedPresetKey = ['cafe', 'retail', 'salon', 'office', 'workshop', 'supermarket'].find((k) => lowerFile.includes(k));
+        if (matchedPresetKey && Demo.businessPresets[matchedPresetKey]) {
+          loadPresetProfile(matchedPresetKey);
+        }
         const mState = getCurrentMeterState();
-        mState.isDemoData = false;
-        mState.bill.businessName = fileMeta.name.replace(/\.[^.]+$/, '');
+        if (!matchedPresetKey) {
+          mState.isDemoData = false;
+          mState.bill.businessName = fileMeta.name.replace(/\.[^.]+$/, '');
+        }
         mState.bill.fieldStatus.businessName = 'uncertain';
         mState.bill.fieldStatus.unitsConsumedKwh = 'uncertain';
         mState.bill.fieldStatus.totalBillAmount = 'uncertain';
@@ -3818,6 +4462,7 @@
       window.addEventListener('DOMContentLoaded', () => {
         initEventListeners();
         setMode(appState.mode || 'simple');
+        setLanguage(appState.lang || 'en');
         setStep(appState.activeStep || 3);
       });
     })();

@@ -1,0 +1,29 @@
+{
+  "_notice": "Fictional demo data — not an official electricity bill.",
+  "provider": "Tamil Nadu Commercial Distribution Demo Utility (Fictional Sample)",
+  "consumerNumber": "DEMO-09-248-1104-X",
+  "businessName": "Sri Murugan Café & Filter Coffee House (Fictional Demo)",
+  "location": "T. Nagar, Chennai, Tamil Nadu (Fictional Demo Address)",
+  "tariffCategory": "LT Commercial Demo Tariff (Fictional — Not Official TANGEDCO/TNPDCL)",
+  "sanctionedLoadKw": 12.0,
+  "billingPeriod": "01 Sep 2026 to 30 Sep 2026 (30 Days)",
+  "unitsConsumedKwh": 2400,
+  "energyChargesInr": 20400,
+  "fixedChargesInr": 1800,
+  "taxesAndDutiesInr": 1020,
+  "otherChargesInr": 180,
+  "totalBillAmountInr": 23400,
+  "effectiveRateInrPerKwh": 9.75,
+  "assumedMarginalRateInrPerKwh": 8.5,
+  "timeOfDayConsumption": {
+    "peakSlotHours": "06:00–10:00 & 18:00–22:00 (Demo Assumption)",
+    "peakConsumptionKwh": 720,
+    "peakRateInrPerKwh": 10.2,
+    "normalSlotHours": "10:00–18:00 (Demo Assumption)",
+    "normalConsumptionKwh": 1200,
+    "normalRateInrPerKwh": 8.5,
+    "offPeakSlotHours": "22:00–06:00 (Demo Assumption)",
+    "offPeakConsumptionKwh": 480,
+    "offPeakRateInrPerKwh": 7.65
+  }
+}
